@@ -1,0 +1,6 @@
+*.pyc
+*.egg*
+.tox*
+.env
+.vscode
+__pycache__
