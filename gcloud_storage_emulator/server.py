@@ -1,26 +1,105 @@
-
-from datetime import datetime
 import logging
-import sys
-import time
+import json
+import re
 import threading
-import grpc
-from concurrent import futures
+import time
 from http import server
+from urllib.parse import urlparse, parse_qs
 
+from gcloud_storage_emulator.handlers import buckets
 
 logger = logging.getLogger("gcloud-storage-emulator")
 
+API_ENDPOINT = "/storage/v1"
+
+GET = "GET"
+POST = "POST"
+
+
+HANDLERS = (
+    (r"^/b$", {GET: buckets.get, POST: buckets.insert}),
+)
+
+
+class Response(object):
+    def __init__(self, handler, status=200):
+        super().__init__()
+        self._handler = handler
+        self.status = status
+        self._headers = {}
+        self._content = ""
+
+    def write(self, content):
+        self._content += content
+        # self._handler.wfile.write(content)
+
+    def json(self, obj):
+        self["Content-type"] = "application/json"
+        self._content = json.dumps(obj)
+
+    def __setitem__(self, key, value):
+        self._headers[key] = value
+
+    def __getitem__(self, key):
+        return self._headers[key]
+
+    def close(self):
+        self._handler.send_response(self.status)
+        for (k, v) in self._headers.items():
+            self._handler.send_header(k, v)
+
+        content = self._content.encode("utf-8")
+        self._handler.send_header("Content-Lenght", str(len(content)))
+        self._handler.end_headers()
+        self._handler.wfile.write(content)
+
+
+class HandlerRouter(object):
+    def __init__(self, request_handler):
+        super().__init__()
+        self._request_handler = request_handler
+        self._path = request_handler.path
+        self._url = urlparse(self._path)
+        self._query = parse_qs(self._url.query)
+
+    def handle(self, method):
+        response = Response(self._request_handler)
+
+        if not self._url.path.startswith(API_ENDPOINT):
+            response.status = 404
+            response.close()
+            return
+
+        for regex, handlers in HANDLERS:
+            pattern = re.compile(regex)
+            match = pattern.fullmatch(self._url.path[len(API_ENDPOINT):])
+            if match:
+                handler = handlers.get(method)
+                handler({
+                    "url": self._url,
+                    "method": method,
+                    "query_match": match
+                }, response)
+
+                break
+        else:
+            response.status = 404
+            return
+
+        response.close()
+
+
 class RequestHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
-        print('Doing GET!')
+        router = HandlerRouter(self)
+        router.handle(GET)
 
     def do_POST(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write('{ "projectNumber": 1234 }'.encode("utf8"))
-        print('Doing POST')
+        router = HandlerRouter(self)
+        router.handle(POST)
+
+        # print(url)
+        # print(parse_qs(url.query))
 
 
 class APIThread(threading.Thread):
@@ -29,15 +108,16 @@ class APIThread(threading.Thread):
 
         self._host = host
         self._port = port
-        self._is_running = threading.Event()
+        self.is_running = threading.Event()
         self._httpd = None
 
     def run(self):
         self._httpd = server.HTTPServer((self._host, self._port), RequestHandler)
+        self.is_running.set()
         self._httpd.serve_forever()
 
     def join(self, timeout=None):
-        self._is_running.clear()
+        self.is_running.clear()
         if self._httpd:
             self._httpd.shutdown()
         logger.info("[API] Stopping API server")
@@ -48,7 +128,8 @@ class Server(object):
         self._api = APIThread(host, port)
 
     def start(self):
-        self._api.start()  # Start the API thread
+        self._api.start()
+        self._api.is_running.wait()  # Start the API thread
 
     def stop(self):
         self._api.join(timeout=1)
@@ -56,17 +137,19 @@ class Server(object):
     def run(self):
         try:
             self.start()
-
             logger.info("[SERVER] All services started")
 
             while True:
                 try:
                     time.sleep(0.1)
                 except KeyboardInterrupt:
+                    logger.info("[SERVER] Received keyboard interrupt")
                     break
 
         finally:
             self.stop()
 
+
 def create_server(host, port):
+    logger.info("Starting server at {}:{}".format(host, port))
     return Server(host, port)

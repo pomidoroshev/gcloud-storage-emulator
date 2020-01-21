@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 
-from gcloud_tasks_emulator.server import create_server
+from gcloud_storage_emulator.server import create_server
 
 # One after gcloud-task-emulator one
 DEFAULT_PORT = 9023
@@ -30,10 +30,13 @@ if __name__ == '__main__':
         parser.print_usage()
         sys.exit(1)
 
-    root = logging.getLogger()
+    root = logging.getLogger('')
+    ch = logging.StreamHandler()
+    root.addHandler(ch)
 
-    if not args.quiet:
-        handler = logging.StreamHandler(sys.stdout)
+    if args.quiet:
+        root.setLevel(logging.CRITICAL)
+    else:
         root.setLevel(logging.DEBUG)
 
     sys.exit(main("localhost", args.port))
