@@ -1,16 +1,15 @@
-import logging
 import json
+import logging
 import re
 import threading
 import time
 from http import server
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
+from gcloud_storage_emulator import settings
 from gcloud_storage_emulator.handlers import buckets
 
 logger = logging.getLogger("gcloud-storage-emulator")
-
-API_ENDPOINT = "/storage/v1"
 
 GET = "GET"
 POST = "POST"
@@ -19,6 +18,15 @@ POST = "POST"
 HANDLERS = (
     (r"^/b$", {GET: buckets.get, POST: buckets.insert}),
 )
+
+
+def _read_data(request_handler):
+    raw_data = request_handler.rfile.read(int(request_handler.headers['content-length']))
+
+    if request_handler.headers['Content-Type'] == 'application/json':
+        return json.loads(raw_data, encoding='utf-8')
+
+    return raw_data
 
 
 class Response(object):
@@ -54,7 +62,7 @@ class Response(object):
         self._handler.wfile.write(content)
 
 
-class HandlerRouter(object):
+class Router(object):
     def __init__(self, request_handler):
         super().__init__()
         self._request_handler = request_handler
@@ -65,20 +73,23 @@ class HandlerRouter(object):
     def handle(self, method):
         response = Response(self._request_handler)
 
-        if not self._url.path.startswith(API_ENDPOINT):
+        if not self._url.path.startswith(settings.API_ENDPOINT):
             response.status = 404
             response.close()
             return
 
         for regex, handlers in HANDLERS:
             pattern = re.compile(regex)
-            match = pattern.fullmatch(self._url.path[len(API_ENDPOINT):])
+            match = pattern.fullmatch(self._url.path[len(settings.API_ENDPOINT):])
             if match:
                 handler = handlers.get(method)
+
                 handler({
                     "url": self._url,
                     "method": method,
-                    "query_match": match
+                    "query": parse_qs(self._url.query),
+                    "query_match": match,
+                    "data": _read_data(self._request_handler)
                 }, response)
 
                 break
@@ -91,15 +102,12 @@ class HandlerRouter(object):
 
 class RequestHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
-        router = HandlerRouter(self)
+        router = Router(self)
         router.handle(GET)
 
     def do_POST(self):
-        router = HandlerRouter(self)
+        router = Router(self)
         router.handle(POST)
-
-        # print(url)
-        # print(parse_qs(url.query))
 
 
 class APIThread(threading.Thread):

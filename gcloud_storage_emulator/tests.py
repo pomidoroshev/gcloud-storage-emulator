@@ -1,10 +1,12 @@
 import logging
-import requests
+import sys
 import unittest
-
-from google.cloud import storage
-from server import create_server
 from unittest import TestCase as BaseTestCase
+
+import requests
+from google.cloud import storage
+
+from server import create_server
 
 
 class TestCase(BaseTestCase):
@@ -12,7 +14,11 @@ class TestCase(BaseTestCase):
         self._server = create_server("localhost", 9023)
         self._server.start()
         self._session = requests.Session()
-        self._client = storage.Client(project='[PROJECT]', _http=self._session, client_options={ 'api_endpoint': "http://localhost:9023"})
+        self._client = storage.Client(
+            project='[PROJECT]',
+            _http=self._session,
+            client_options={'api_endpoint': "http://localhost:9023"},
+        )
 
     def tearDown(self):
         self._server.stop()
@@ -26,5 +32,5 @@ if __name__ == '__main__':
     root = logging.getLogger('')
     ch = logging.StreamHandler()
     root.addHandler(ch)
-    root.setLevel(logging.WARNING)
-    unittest.main()
+    root.setLevel(logging.DEBUG)
+    sys.exit(unittest.main())
