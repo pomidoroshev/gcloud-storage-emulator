@@ -16,12 +16,15 @@ POST = "POST"
 
 
 HANDLERS = (
-    (r"^/b$", {GET: buckets.get, POST: buckets.insert}),
+    (r"^/b$", {GET: buckets.list, POST: buckets.insert}),
 )
 
 
 def _read_data(request_handler):
-    raw_data = request_handler.rfile.read(int(request_handler.headers['content-length']))
+    if not request_handler.headers['Content-Length']:
+        return None
+
+    raw_data = request_handler.rfile.read(int(request_handler.headers['Content-Length']))
 
     if request_handler.headers['Content-Type'] == 'application/json':
         return json.loads(raw_data, encoding='utf-8')

@@ -25,12 +25,12 @@ class ServerTests(BaseTestCase):
         self._server.stop()
 
     def test_bucket_creation(self):
-        ret = self._client.create_bucket('bucket_name')
-        self.assertEqual(ret.project_number, 1234)
+        bucket = self._client.create_bucket('bucket_name')
+        self.assertEqual(bucket.project_number, 1234)
 
-    def test_bucket_creation_2(self):
-        ret = self._client.create_bucket('bucket_name')
-        self.assertEqual(ret.project_number, 1234)
+    def test_bucket_list(self):
+        bucket = self._client.create_bucket('bucket_name')
+        self.assertIn(bucket, self._client.list_buckets())
 
 
 if __name__ == '__main__':

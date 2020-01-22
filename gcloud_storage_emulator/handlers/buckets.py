@@ -59,7 +59,7 @@ def _make_bucket_resource(bucket_name):
     }
 
 
-def get(data):
+def list(request, response):
     logger.info("[BUCKETS] Get received")
 
 
