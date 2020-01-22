@@ -38,6 +38,7 @@ class Response(object):
         self._content = ""
 
     def write(self, content):
+        logger.warning("[RESPONSE] Content handled as string, should be handled as stream")
         self._content += content
         # self._handler.wfile.write(content)
 
@@ -128,7 +129,8 @@ class APIThread(threading.Thread):
         self.is_running.clear()
         if self._httpd:
             self._httpd.shutdown()
-        logger.info("[API] Stopping API server")
+            self._httpd.server_close()
+            logger.info("[API] Stopping API server")
 
 
 class Server(object):

@@ -14,9 +14,9 @@ setup(
         "bin/gcloud-storage-emulator"
     ],
     install_requires=[
+        'fs',
         'grpcio',
         'google-cloud-storage',
         'requests',
     ]
 )
-

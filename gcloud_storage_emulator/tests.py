@@ -9,9 +9,10 @@ from google.cloud import storage
 from server import create_server
 
 
-class TestCase(BaseTestCase):
+class ServerTests(BaseTestCase):
     def setUp(self):
         self._server = create_server("localhost", 9023)
+        print("SETUP")
         self._server.start()
         self._session = requests.Session()
         self._client = storage.Client(
@@ -23,7 +24,11 @@ class TestCase(BaseTestCase):
     def tearDown(self):
         self._server.stop()
 
-    def test_something(self):
+    def test_bucket_creation(self):
+        ret = self._client.create_bucket('bucket_name')
+        self.assertEqual(ret.project_number, 1234)
+
+    def test_bucket_creation_2(self):
         ret = self._client.create_bucket('bucket_name')
         self.assertEqual(ret.project_number, 1234)
 
