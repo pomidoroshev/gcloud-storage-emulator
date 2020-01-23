@@ -89,3 +89,18 @@ def insert(request, response, storage, *args, **kwargs):
     else:
         response.status = 400
         response.json(BAD_REQUEST)
+
+
+def delete(request, response, storage, *args, **kwargs):
+    name = request["params"].get("bucket_name")
+    if not name:
+        response.status = 400
+        return response.json(BAD_REQUEST)
+
+    bucket = storage.buckets.get(name)
+
+    if not bucket:
+        response.status = 404
+        return
+
+    del storage.buckets[name]

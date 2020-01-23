@@ -10,7 +10,7 @@ from google.cloud import storage
 from server import create_server
 
 
-class ServerTests(BaseTestCase):
+class BucketTests(BaseTestCase):
     def setUp(self):
         self._server = create_server("localhost", 9023)
         self._server.start()
@@ -46,6 +46,19 @@ class ServerTests(BaseTestCase):
     def test_bucket_get_non_existing(self):
         with self.assertRaises(NotFound):
             self._client.get_bucket('bucket_name')
+
+    def test_bucket_delete(self):
+        bucket = self._client.create_bucket('bucket_name')
+        bucket.delete()
+
+    def test_bucket_delete_non_existing(self):
+        # client.bucket doesn't create the actual bucket resource remotely,
+        # it only instantiate it in the local client
+        bucket = self._client.bucket('bucket_name')
+        with self.assertRaises(NotFound):
+            bucket.delete()
+
+    # TODO: test delete non-empty bucket and delete-force
 
 
 if __name__ == '__main__':

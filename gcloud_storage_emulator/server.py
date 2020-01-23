@@ -15,10 +15,11 @@ logger = logging.getLogger("gcloud-storage-emulator")
 
 GET = "GET"
 POST = "POST"
+DELETE = "DELETE"
 
 HANDLERS = (
     (r"^/b$", {GET: buckets.ls, POST: buckets.insert}),
-    (r"^/b/(?P<bucket_name>[-\w]+)$", {GET: buckets.get}),
+    (r"^/b/(?P<bucket_name>[-\w]+)$", {GET: buckets.get, DELETE: buckets.delete}),
 )
 
 
@@ -117,6 +118,10 @@ class RequestHandler(server.BaseHTTPRequestHandler):
     def do_POST(self):
         router = Router(self)
         router.handle(POST)
+
+    def do_DELETE(self):
+        router = Router(self)
+        router.handle(DELETE)
 
 
 class APIThread(threading.Thread):
