@@ -3,10 +3,12 @@ import logging
 import re
 import threading
 import time
+from functools import partial
 from http import server
 from urllib.parse import parse_qs, urlparse
 
 from gcloud_storage_emulator import settings
+from gcloud_storage_emulator.storage import Storage
 from gcloud_storage_emulator.handlers import buckets
 
 logger = logging.getLogger("gcloud-storage-emulator")
@@ -14,9 +16,9 @@ logger = logging.getLogger("gcloud-storage-emulator")
 GET = "GET"
 POST = "POST"
 
-
 HANDLERS = (
-    (r"^/b$", {GET: buckets.list, POST: buckets.insert}),
+    (r"^/b$", {GET: buckets.ls, POST: buckets.insert}),
+    (r"^/b/(?P<bucket_name>[-\w]+)$", {GET: buckets.get}),
 )
 
 
@@ -43,7 +45,6 @@ class Response(object):
     def write(self, content):
         logger.warning("[RESPONSE] Content handled as string, should be handled as stream")
         self._content += content
-        # self._handler.wfile.write(content)
 
     def json(self, obj):
         self["Content-type"] = "application/json"
@@ -92,9 +93,9 @@ class Router(object):
                     "url": self._url,
                     "method": method,
                     "query": parse_qs(self._url.query),
-                    "query_match": match,
+                    "params": match.groupdict(),
                     "data": _read_data(self._request_handler)
-                }, response)
+                }, response, self._request_handler.storage)
 
                 break
         else:
@@ -105,6 +106,10 @@ class Router(object):
 
 
 class RequestHandler(server.BaseHTTPRequestHandler):
+    def __init__(self, storage, *args, **kwargs):
+        self.storage = storage
+        super().__init__(*args, **kwargs)
+
     def do_GET(self):
         router = Router(self)
         router.handle(GET)
@@ -124,16 +129,16 @@ class APIThread(threading.Thread):
         self._httpd = None
 
     def run(self):
-        self._httpd = server.HTTPServer((self._host, self._port), RequestHandler)
+        self._httpd = server.HTTPServer((self._host, self._port), partial(RequestHandler, Storage()))
         self.is_running.set()
         self._httpd.serve_forever()
 
     def join(self, timeout=None):
         self.is_running.clear()
         if self._httpd:
+            logger.info("[API] Stopping API server")
             self._httpd.shutdown()
             self._httpd.server_close()
-            logger.info("[API] Stopping API server")
 
 
 class Server(object):

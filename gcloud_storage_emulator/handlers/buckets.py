@@ -19,7 +19,7 @@ ALREADY_EXISTING = {
     }
 }
 
-ERROR = {
+BAD_REQUEST = {
     "error": {
         "errors": [
             {
@@ -59,13 +59,33 @@ def _make_bucket_resource(bucket_name):
     }
 
 
-def list(request, response):
-    logger.info("[BUCKETS] Get received")
+def get(request, response, storage, *args, **kwargs):
+    name = request["params"].get("bucket_name")
+    if name and storage.buckets.get(name):
+        response.json(storage.buckets.get(name))
+    else:
+        response.status = 404
 
 
-def insert(request, response):
-    name = request["data"].get("name", None)
+def ls(request, response, storage, *args, **kwargs):
+    logger.info("[BUCKETS] List received")
+    response.json({
+        "kind": "storage#buckets",
+        "items": list(storage.buckets.values()),
+    })
+
+
+def insert(request, response, storage, *args, **kwargs):
+    name = request["data"].get("name")
     if name:
         logger.debug("[BUCKETS] Received request to create bucket with name {}".format(name))
-        bucket = _make_bucket_resource(name)
-        response.json(bucket)
+        if storage.buckets.get(name):
+            response.status = 409
+            response.json(ALREADY_EXISTING)
+        else:
+            bucket = _make_bucket_resource(name)
+            storage.buckets[name] = bucket
+            response.json(bucket)
+    else:
+        response.status = 400
+        response.json(BAD_REQUEST)
