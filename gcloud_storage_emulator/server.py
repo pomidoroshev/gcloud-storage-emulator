@@ -1,3 +1,4 @@
+import email
 import json
 import logging
 import re
@@ -8,8 +9,8 @@ from http import server
 from urllib.parse import parse_qs, urlparse
 
 from gcloud_storage_emulator import settings
+from gcloud_storage_emulator.handlers import buckets, objects
 from gcloud_storage_emulator.storage import Storage
-from gcloud_storage_emulator.handlers import buckets
 
 logger = logging.getLogger("gcloud-storage-emulator")
 
@@ -18,19 +19,39 @@ POST = "POST"
 DELETE = "DELETE"
 
 HANDLERS = (
-    (r"^/b$", {GET: buckets.ls, POST: buckets.insert}),
-    (r"^/b/(?P<bucket_name>[-\w]+)$", {GET: buckets.get, DELETE: buckets.delete}),
+    (r"^{}/b$".format(settings.API_ENDPOINT), {GET: buckets.ls, POST: buckets.insert}),
+    (r"^{}/b/(?P<bucket_name>[-\w]+)$".format(settings.API_ENDPOINT), {GET: buckets.get, DELETE: buckets.delete}),
+    (r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.UPLOAD_API_ENDPOINT), {POST: objects.insert})
 )
 
 
 def _read_data(request_handler):
-    if not request_handler.headers['Content-Length']:
+    if not request_handler.headers["Content-Length"] or not request_handler.headers["Content-Type"]:
         return None
 
-    raw_data = request_handler.rfile.read(int(request_handler.headers['Content-Length']))
+    raw_data = request_handler.rfile.read(int(request_handler.headers["Content-Length"]))
 
-    if request_handler.headers['Content-Type'] == 'application/json':
-        return json.loads(raw_data, encoding='utf-8')
+    content_type = request_handler.headers["Content-Type"]
+
+    if content_type == "application/json":
+        return json.loads(raw_data, encoding="utf-8")
+
+    if content_type.startswith("multipart/"):
+        content = "Content-Type:" + content_type + "\r\n"
+        content += raw_data.decode("utf-8")
+        msg = email.message_from_string(content)
+
+        payload = msg.get_payload()
+        meta = json.loads(payload[0].get_payload(), encoding="utf-8")
+        content = payload[1].get_payload()
+
+        # For multipart upload, google API expect the first item to be a json-encoded
+        # object, and the second (and only other) part, the file content
+
+        return {
+            "meta": meta,
+            "content": content,
+        }
 
     return raw_data
 
@@ -79,14 +100,9 @@ class Router(object):
     def handle(self, method):
         response = Response(self._request_handler)
 
-        if not self._url.path.startswith(settings.API_ENDPOINT):
-            response.status = 404
-            response.close()
-            return
-
         for regex, handlers in HANDLERS:
             pattern = re.compile(regex)
-            match = pattern.fullmatch(self._url.path[len(settings.API_ENDPOINT):])
+            match = pattern.fullmatch(self._url.path)
             if match:
                 handler = handlers.get(method)
 
