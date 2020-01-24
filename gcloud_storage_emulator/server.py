@@ -5,7 +5,7 @@ import re
 import threading
 import time
 from functools import partial
-from http import server
+from http import server, HTTPStatus
 from urllib.parse import parse_qs, urlparse
 
 from gcloud_storage_emulator import settings
@@ -42,25 +42,66 @@ def _read_data(request_handler):
         msg = email.message_from_string(content)
 
         payload = msg.get_payload()
-        meta = json.loads(payload[0].get_payload(), encoding="utf-8")
-        content = payload[1].get_payload()
 
         # For multipart upload, google API expect the first item to be a json-encoded
         # object, and the second (and only other) part, the file content
-
         return {
-            "meta": meta,
-            "content": content,
+            "meta": json.loads(payload[0].get_payload(), encoding="utf-8"),
+            "content": payload[1].get_payload(),
+            "content-type": payload[1].get_content_type(),
         }
 
     return raw_data
 
 
+class Request(object):
+    def __init__(self, request_handler, method):
+        super().__init__()
+        self._path = request_handler.path
+        self._request_handler = request_handler
+        self._server_address = request_handler.server.server_address
+        self._base_url = "http://{}:{}".format(self._server_address[0], self._server_address[1])
+        self._full_url = self._base_url + self._path
+        self._parsed_url = urlparse(self._full_url)
+        self._query = parse_qs(self._parsed_url.query)
+        self._methtod = method
+        self._data = None
+
+    @property
+    def path(self):
+        return self._parsed_url.path
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    @property
+    def method(self):
+        return self._methtod
+
+    @property
+    def query(self):
+        return self._query
+
+    @property
+    def params(self):
+        return self._match.groupdict() if self._match else None
+
+    @property
+    def data(self):
+        if not self._data:
+            self._data = _read_data(self._request_handler)
+        return self._data
+
+    def set_match(self, match):
+        self._match = match
+
+
 class Response(object):
-    def __init__(self, handler, status=200):
+    def __init__(self, handler):
         super().__init__()
         self._handler = handler
-        self.status = status
+        self.status = HTTPStatus.OK
         self._headers = {}
         self._content = ""
 
@@ -79,7 +120,7 @@ class Response(object):
         return self._headers[key]
 
     def close(self):
-        self._handler.send_response(self.status)
+        self._handler.send_response(self.status.value, self.status.phrase)
         for (k, v) in self._headers.items():
             self._handler.send_header(k, v)
 
@@ -93,30 +134,23 @@ class Router(object):
     def __init__(self, request_handler):
         super().__init__()
         self._request_handler = request_handler
-        self._path = request_handler.path
-        self._url = urlparse(self._path)
-        self._query = parse_qs(self._url.query)
 
     def handle(self, method):
+        request = Request(self._request_handler, method)
         response = Response(self._request_handler)
 
         for regex, handlers in HANDLERS:
             pattern = re.compile(regex)
-            match = pattern.fullmatch(self._url.path)
+            match = pattern.fullmatch(request.path)
             if match:
+                request.set_match(match)
                 handler = handlers.get(method)
 
-                handler({
-                    "url": self._url,
-                    "method": method,
-                    "query": parse_qs(self._url.query),
-                    "params": match.groupdict(),
-                    "data": _read_data(self._request_handler)
-                }, response, self._request_handler.storage)
+                handler(request, response, self._request_handler.storage)
 
                 break
         else:
-            response.status = 404
+            response.status = HTTPStatus.NOT_FOUND
             return
 
         response.close()

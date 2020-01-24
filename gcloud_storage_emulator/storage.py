@@ -14,7 +14,7 @@ class Storage(object):
         self.buckets = {}
         self.objects = {}
 
-    def create_file(self, bucket_name, file_name, content):
+    def create_file(self, bucket_name, file_name, content, content_type, object):
         try:
             bucket_dir = self._fs.makedir(bucket_name)
         except fs.errors.DirectoryExists:
@@ -25,4 +25,3 @@ class Storage(object):
             bucket_objects = self.objects.get(bucket_name, {})
             # bucket_objects[file_name] = ....
             self.objects[bucket_name] = bucket_objects
-
