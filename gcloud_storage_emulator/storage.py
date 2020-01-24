@@ -1,5 +1,6 @@
 import fs
 from gcloud_storage_emulator.settings import STORAGE_BASE, STORAGE_DIR
+from gcloud_storage_emulator.exceptions import NotFound
 
 
 class Storage(object):
@@ -26,6 +27,12 @@ class Storage(object):
             bucket_objects = self.objects.get(bucket_name, {})
             bucket_objects[file_name] = file_obj
             self.objects[bucket_name] = bucket_objects
+
+    def get_file_obj(self, bucket_name, file_name):
+        try:
+            return self.objects[bucket_name][file_name]
+        except KeyError:
+            raise NotFound
 
     def reset(self):
         self.buckets = {}

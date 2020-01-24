@@ -21,7 +21,8 @@ DELETE = "DELETE"
 HANDLERS = (
     (r"^{}/b$".format(settings.API_ENDPOINT), {GET: buckets.ls, POST: buckets.insert}),
     (r"^{}/b/(?P<bucket_name>[-\w]+)$".format(settings.API_ENDPOINT), {GET: buckets.get, DELETE: buckets.delete}),
-    (r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.UPLOAD_API_ENDPOINT), {POST: objects.insert})
+    (r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.UPLOAD_API_ENDPOINT), {POST: objects.insert}),
+    (r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.API_ENDPOINT), {GET: objects.get}),
 )
 
 
@@ -74,6 +75,10 @@ class Request(object):
     @property
     def base_url(self):
         return self._base_url
+
+    @property
+    def full_url(self):
+        return self._full_url
 
     @property
     def method(self):
@@ -145,13 +150,15 @@ class Router(object):
             if match:
                 request.set_match(match)
                 handler = handlers.get(method)
-
-                handler(request, response, self._request_handler.storage)
-
+                try:
+                    handler(request, response, self._request_handler.storage)
+                except Exception as e:
+                    logger.error("An error has occured while running the handler for {}".format(request.full_url))
+                    logger.error(e)
+                    raise e
                 break
         else:
-            response.status = HTTPStatus.NOT_FOUND
-            return
+            response.status = HTTPStatus.NOT_IMPLEMENTED
 
         response.close()
 

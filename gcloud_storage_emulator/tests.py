@@ -104,15 +104,27 @@ class ObjectsTests(BaseTestCase):
             read_content = pwd.readtext("testbucket/testblob-name.txt")
             self.assertEqual(read_content, content)
 
-    def test_download_as_string(self):
+    def test_get(self):
+        file_name = "testblob-name.txt"
         content = "this is the content of the file\n"
         bucket = self._client.create_bucket("testbucket")
-        blob = bucket.blob("testblob-name.txt")
+        blob = bucket.blob(file_name)
         blob.upload_from_string(content)
 
-        blob = bucket.blob("testblob-name.txt")
-        data = blob.download_as_string()
-        self.assertEqual(str(data, encoding="utf-8"), content)
+        blob = bucket.get_blob(file_name)
+        self.assertEqual(blob.name, file_name)
+
+    def test_get_nonexistant(self):
+        bucket = self._client.create_bucket("testbucket")
+        res = bucket.get_blob("idonotexist")
+
+        self.assertIsNone(res)
+
+        blob = bucket.blob("iexist")
+        blob.upload_from_string("some_fake_content")
+        blob = bucket.get_blob("idonotexist")
+
+        self.assertIsNone(res)
 
 
 if __name__ == "__main__":
