@@ -1,9 +1,12 @@
-import time
 import math
+import time
+from datetime import datetime
 from http import HTTPStatus
+
 
 def _make_object_resource(bucket_name, object_name, content_type, content_length):
     time_id = math.floor(time.time())
+    now = str(datetime.now())
 
     return {
         "kind": "storage#object",
@@ -14,10 +17,10 @@ def _make_object_resource(bucket_name, object_name, content_type, content_length
         "generation": str(time_id),
         "metageneration": "1",
         "contentType": content_type,
-        "timeCreated": "2020-01-24T11:14:43.743Z",
-        "updated": "2020-01-24T11:14:43.743Z",
+        "timeCreated": now,
+        "updated": now,
         "storageClass": "STANDARD",
-        "timeStorageClassUpdated": "2020-01-24T11:14:43.743Z",
+        "timeStorageClassUpdated": now,
         "size": content_length,
         "md5Hash": "NOT_IMPLEMENTED",
         "mediaLink": "/download/storage/v1/b/{}/o/{}?generation={}&alt=media".format(
@@ -46,7 +49,13 @@ def insert(request, response, storage, *args, **kwargs):
         request.data["content-type"],
         str(len(request.data["content"])),
     )
-    storage.create_file(request.params["bucket_name"], request.data["meta"]["name"], request.data["content"], request.data["content-type"], obj)
-    print(obj)
-    print(request.base_url)
-    # bucket_name = request.params["bucket_name"]
+
+    storage.create_file(
+        request.params["bucket_name"],
+        request.data["meta"]["name"],
+        request.data["content"],
+        request.data["content-type"],
+        obj,
+    )
+
+    response.json(obj)

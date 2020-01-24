@@ -175,16 +175,17 @@ class RequestHandler(server.BaseHTTPRequestHandler):
 
 
 class APIThread(threading.Thread):
-    def __init__(self, host, port, *args, **kwargs):
+    def __init__(self, host, port, storage, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._host = host
         self._port = port
         self.is_running = threading.Event()
         self._httpd = None
+        self._storage = storage
 
     def run(self):
-        self._httpd = server.HTTPServer((self._host, self._port), partial(RequestHandler, Storage()))
+        self._httpd = server.HTTPServer((self._host, self._port), partial(RequestHandler, self._storage))
         self.is_running.set()
         self._httpd.serve_forever()
 
@@ -198,7 +199,8 @@ class APIThread(threading.Thread):
 
 class Server(object):
     def __init__(self, host, port):
-        self._api = APIThread(host, port)
+        self._storage = Storage()
+        self._api = APIThread(host, port, self._storage)
 
     def start(self):
         self._api.start()
@@ -206,6 +208,9 @@ class Server(object):
 
     def stop(self):
         self._api.join(timeout=1)
+
+    def reset(self):
+        self._storage.reset()
 
     def run(self):
         try:

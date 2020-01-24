@@ -4,10 +4,12 @@ import sys
 import unittest
 from unittest import TestCase as BaseTestCase
 
+import fs
 import requests
 from google.api_core.exceptions import Conflict, NotFound
 
 from server import create_server
+from gcloud_storage_emulator.settings import STORAGE_BASE, STORAGE_DIR
 
 
 def _get_storage_client(http):
@@ -25,14 +27,20 @@ def _get_storage_client(http):
 
 
 class BucketsTests(BaseTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls._server = create_server("localhost", 9023)
+        cls._server.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._server.stop()
+
     def setUp(self):
-        self._server = create_server("localhost", 9023)
-        self._server.start()
+        BucketsTests._server.reset()
         self._session = requests.Session()
         self._client = _get_storage_client(self._session)
-
-    def tearDown(self):
-        self._server.stop()
 
     def test_bucket_creation(self):
         bucket = self._client.create_bucket('bucket_name')
@@ -84,11 +92,27 @@ class ObjectsTests(BaseTestCase):
     def setUp(self):
         self._session = requests.Session()
         self._client = _get_storage_client(self._session)
+        ObjectsTests._server.reset()
 
     def test_upload_from_string(self):
+        content = "this is the content of the file\n"
         bucket = self._client.create_bucket("testbucket")
         blob = bucket.blob("testblob-name.txt")
-        blob.upload_from_string("this is the content of the file\n")
+        blob.upload_from_string(content)
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            read_content = pwd.readtext("testbucket/testblob-name.txt")
+            self.assertEqual(read_content, content)
+
+    def test_download_as_string(self):
+        content = "this is the content of the file\n"
+        bucket = self._client.create_bucket("testbucket")
+        blob = bucket.blob("testblob-name.txt")
+        blob.upload_from_string(content)
+
+        blob = bucket.blob("testblob-name.txt")
+        data = blob.download_as_string()
+        self.assertEqual(str(data, encoding="utf-8"), content)
 
 
 if __name__ == "__main__":

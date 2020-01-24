@@ -36,14 +36,15 @@ BAD_REQUEST = {
 
 
 def _make_bucket_resource(bucket_name):
+    now = datetime.now().__str__()
     return {
         "kind": "storage#bucket",
         "id": bucket_name,
         "selfLink": "{}/b/{}".format(settings.API_ENDPOINT, bucket_name),
         "projectNumber": "1234",
         "name": bucket_name,
-        "timeCreated": datetime.now().__str__(),
-        "updated": datetime.now().__str__(),
+        "timeCreated": now,
+        "updated": now,
         "metageneration": "1",
         "iamConfiguration": {
             "bucketPolicyOnly": {
