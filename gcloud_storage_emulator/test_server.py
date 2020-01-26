@@ -8,7 +8,7 @@ import fs
 import requests
 from google.api_core.exceptions import Conflict, NotFound
 
-from server import create_server
+from gcloud_storage_emulator.server import create_server
 from gcloud_storage_emulator.settings import STORAGE_BASE, STORAGE_DIR
 
 
