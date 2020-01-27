@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import unittest
+from io import BytesIO
 from unittest import TestCase as BaseTestCase
 
 import fs
@@ -104,7 +105,7 @@ class ObjectsTests(BaseTestCase):
             read_content = pwd.readtext("testbucket/testblob-name.txt")
             self.assertEqual(read_content, content)
 
-    def test_upload_from_file(self):
+    def test_upload_from_text_file(self):
         text_test = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_text.txt')
         bucket = self._client.create_bucket("testbucket")
         blob = bucket.blob("test_text.txt")
@@ -116,6 +117,20 @@ class ObjectsTests(BaseTestCase):
 
         with open(text_test, "rb") as file:
             expected_content = str(file.read(), encoding="utf-8")
+            self.assertEqual(read_content, expected_content)
+
+    def test_upload_from_bin_file(self):
+        test_binary = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_binary.png')
+        bucket = self._client.create_bucket("testbucket")
+        blob = bucket.blob("binary.png")
+        with open(test_binary, "rb") as file:
+            blob.upload_from_file(file)
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            read_content = pwd.readbytes("testbucket/binary.png")
+
+        with open(test_binary, "rb") as file:
+            expected_content = file.read()
             self.assertEqual(read_content, expected_content)
 
     def test_get(self):
@@ -150,6 +165,36 @@ class ObjectsTests(BaseTestCase):
         blob = bucket.get_blob("iexist")
         fetched_content = blob.download_as_string()
         self.assertEqual(fetched_content, content.encode('utf-8'))
+
+    def test_download_binary_to_file(self):
+        test_binary = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_binary.png')
+        bucket = self._client.create_bucket("testbucket")
+
+        blob = bucket.blob("binary.png")
+        with open(test_binary, "rb") as file:
+            blob.upload_from_file(file, content_type="image/png")
+
+        blob = bucket.get_blob("binary.png")
+        fetched_file = BytesIO()
+        blob.download_to_file(fetched_file)
+
+        with open(test_binary, "rb") as file:
+            self.assertEqual(fetched_file.getvalue(), file.read())
+
+    def test_download_text_to_file(self):
+        test_text = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_text.txt')
+        bucket = self._client.create_bucket("testbucket")
+
+        blob = bucket.blob("text.txt")
+        with open(test_text, "rb") as file:
+            blob.upload_from_file(file, content_type="text/plain; charset=utf-8")
+
+        blob = bucket.get_blob("text.txt")
+        fetched_file = BytesIO()
+        blob.download_to_file(fetched_file)
+
+        with open(test_text, "rb") as file:
+            self.assertEqual(fetched_file.getvalue(), file.read())
 
 
 if __name__ == "__main__":
