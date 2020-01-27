@@ -1,5 +1,6 @@
 import math
 import time
+import urllib.parse
 from datetime import datetime
 from http import HTTPStatus
 
@@ -36,18 +37,7 @@ def _make_object_resource(base_url, bucket_name, object_name, content_type, cont
     }
 
 
-def insert(request, response, storage, *args, **kwargs):
-    uploadType = request.query.get("uploadType")
-
-    if not uploadType or len(uploadType) == 0:
-        response.status = HTTPStatus.BAD_REQUEST
-        return
-
-    uploadType = uploadType[0]
-
-    if uploadType == "resumable":
-        raise Exception("Not implemented")
-
+def _multipart_upload(request, response, storage):
     obj = _make_object_resource(
         request.base_url,
         request.params["bucket_name"],
@@ -60,11 +50,55 @@ def insert(request, response, storage, *args, **kwargs):
         request.params["bucket_name"],
         request.data["meta"]["name"],
         request.data["content"],
-        request.data["content-type"],
         obj,
     )
 
     response.json(obj)
+
+
+def _create_resumable_upload(request, response, storage):
+    content_type = request.get_header('x-upload-content-type', 'application/octet-stream')
+    content_length = request.get_header('x-upload-content-length', None)
+    obj = _make_object_resource(
+        request.base_url,
+        request.params["bucket_name"],
+        request.data["name"],
+        content_type,
+        content_length,
+    )
+
+    id = storage.create_resumable_upload(
+        request.params["bucket_name"],
+        request.data["name"],
+        obj,
+    )
+
+    encoded_id = urllib.parse.urlencode({
+        'upload_id': id,
+    })
+    response["Location"] = request.full_url + "&{}".format(encoded_id)
+
+
+def insert(request, response, storage, *args, **kwargs):
+    uploadType = request.query.get("uploadType")
+
+    if not uploadType or len(uploadType) == 0:
+        response.status = HTTPStatus.BAD_REQUEST
+        return
+
+    uploadType = uploadType[0]
+
+    if uploadType == "resumable":
+        return _create_resumable_upload(request, response, storage)
+
+    if uploadType == "multipart":
+        return _multipart_upload(request, response, storage)
+
+
+def upload_partial(request, response, storage, *args, **kwargs):
+    upload_id = request.query.get('upload_id')[0]
+    obj = storage.create_file_for_resumable_upload(upload_id, request.data)
+    return response.json(obj)
 
 
 def get(request, response, storage, *args, **kwargs):

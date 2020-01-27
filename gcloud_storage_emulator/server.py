@@ -16,12 +16,16 @@ logger = logging.getLogger("gcloud-storage-emulator")
 
 GET = "GET"
 POST = "POST"
+PUT = "PUT"
 DELETE = "DELETE"
 
 HANDLERS = (
     (r"^{}/b$".format(settings.API_ENDPOINT), {GET: buckets.ls, POST: buckets.insert}),
     (r"^{}/b/(?P<bucket_name>[-\w]+)$".format(settings.API_ENDPOINT), {GET: buckets.get, DELETE: buckets.delete}),
-    (r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.UPLOAD_API_ENDPOINT), {POST: objects.insert}),
+    (
+        r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.UPLOAD_API_ENDPOINT),
+        {POST: objects.insert, PUT: objects.upload_partial}
+    ),
     (r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.API_ENDPOINT), {GET: objects.get}),
     (
         r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.DOWNLOAD_API_ENDPOINT),
@@ -38,7 +42,8 @@ def _read_data(request_handler):
 
     content_type = request_handler.headers["Content-Type"]
 
-    if content_type == "application/json":
+    if content_type.startswith("application/json"):
+        # TODO: handle encodings other than utf-8
         return json.loads(raw_data, encoding="utf-8")
 
     if content_type.startswith("multipart/"):
@@ -101,6 +106,9 @@ class Request(object):
         if not self._data:
             self._data = _read_data(self._request_handler)
         return self._data
+
+    def get_header(self, key, default=None):
+        return self._request_handler.headers.get(key, default)
 
     def set_match(self, match):
         self._match = match
@@ -167,7 +175,10 @@ class Router(object):
                 try:
                     handler(request, response, self._request_handler.storage)
                 except Exception as e:
-                    logger.error("An error has occured while running the handler for {}".format(request.full_url))
+                    logger.error("An error has occured while running the handler for {} {}".format(
+                        request.method,
+                        request.full_url,
+                    ))
                     logger.error(e)
                     raise e
                 break
@@ -195,6 +206,10 @@ class RequestHandler(server.BaseHTTPRequestHandler):
     def do_DELETE(self):
         router = Router(self)
         router.handle(DELETE)
+
+    def do_PUT(self):
+        router = Router(self)
+        router.handle(PUT)
 
 
 class APIThread(threading.Thread):

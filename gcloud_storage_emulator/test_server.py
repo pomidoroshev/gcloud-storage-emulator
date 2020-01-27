@@ -104,6 +104,19 @@ class ObjectsTests(BaseTestCase):
             read_content = pwd.readtext("testbucket/testblob-name.txt")
             self.assertEqual(read_content, content)
 
+    def test_upload_from_file(self):
+        bucket = self._client.create_bucket("testbucket")
+        blob = bucket.blob("README.md")
+        with open("README.md", "rb") as file:
+            blob.upload_from_file(file)
+
+            with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+                read_content = pwd.readtext("testbucket/README.md")
+
+        with open("README.md", "rb") as file:
+            expected_content = str(file.read(), encoding="utf-8")
+            self.assertEqual(read_content, expected_content)
+
     def test_get(self):
         file_name = "testblob-name.txt"
         content = "this is the content of the file\n"
