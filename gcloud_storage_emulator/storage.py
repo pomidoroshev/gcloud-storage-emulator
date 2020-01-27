@@ -81,6 +81,7 @@ class Storage(object):
         file_obj["size"] = str(len(content))
         bucket_objects = self.objects.get(bucket_name, {})
         bucket_objects[file_name] = file_obj
+        self.objects[bucket_name] = bucket_objects
         del self.resumable[file_id]
         self._write_config_to_file()
 
@@ -95,7 +96,7 @@ class Storage(object):
     def get_file(self, bucket_name, file_name):
         try:
             bucket_dir = self._fs.opendir(bucket_name)
-            return bucket_dir.open(file_name, mode="r").read()
+            return bucket_dir.open(file_name, mode="rb").read()
         except (FileExpected, ResourceNotFound) as e:
             logger.error("Resource not found:")
             logger.error(e)
