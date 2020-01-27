@@ -105,15 +105,16 @@ class ObjectsTests(BaseTestCase):
             self.assertEqual(read_content, content)
 
     def test_upload_from_file(self):
+        text_test = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_text.txt')
         bucket = self._client.create_bucket("testbucket")
-        blob = bucket.blob("README.md")
-        with open("README.md", "rb") as file:
+        blob = bucket.blob("test_text.txt")
+        with open(text_test, "rb") as file:
             blob.upload_from_file(file)
 
             with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
-                read_content = pwd.readtext("testbucket/README.md")
+                read_content = pwd.readtext("testbucket/test_text.txt")
 
-        with open("README.md", "rb") as file:
+        with open(text_test, "rb") as file:
             expected_content = str(file.read(), encoding="utf-8")
             self.assertEqual(read_content, expected_content)
 
@@ -139,7 +140,7 @@ class ObjectsTests(BaseTestCase):
 
         self.assertIsNone(res)
 
-    def test_download(self):
+    def test_download_as_string(self):
         content = "The quick brown fox jumps over the lazy dog\n"
         bucket = self._client.create_bucket("testbucket")
 
