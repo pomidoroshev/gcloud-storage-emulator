@@ -1,6 +1,12 @@
+import logging
+
 import fs
-from gcloud_storage_emulator.settings import STORAGE_BASE, STORAGE_DIR
+from fs.errors import FileExpected, ResourceNotFound
+
 from gcloud_storage_emulator.exceptions import NotFound
+from gcloud_storage_emulator.settings import STORAGE_BASE, STORAGE_DIR
+
+logger = logging.getLogger("storage")
 
 
 class Storage(object):
@@ -32,6 +38,15 @@ class Storage(object):
         try:
             return self.objects[bucket_name][file_name]
         except KeyError:
+            raise NotFound
+
+    def get_file(self, bucket_name, file_name):
+        try:
+            bucket_dir = self._fs.opendir(bucket_name)
+            return bucket_dir.open(file_name, mode="r").read()
+        except (FileExpected, ResourceNotFound) as e:
+            logger.error("Resource not found:")
+            logger.error(e)
             raise NotFound
 
     def reset(self):

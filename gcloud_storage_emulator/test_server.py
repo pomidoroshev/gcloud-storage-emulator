@@ -126,6 +126,17 @@ class ObjectsTests(BaseTestCase):
 
         self.assertIsNone(res)
 
+    def test_download(self):
+        content = "The quick brown fox jumps over the lazy dog\n"
+        bucket = self._client.create_bucket("testbucket")
+
+        blob = bucket.blob("iexist")
+        blob.upload_from_string(content)
+
+        blob = bucket.get_blob("iexist")
+        fetched_content = blob.download_as_string()
+        self.assertEqual(fetched_content, content.encode('utf-8'))
+
 
 if __name__ == "__main__":
     root = logging.getLogger("")

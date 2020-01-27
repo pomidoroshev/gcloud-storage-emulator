@@ -73,3 +73,12 @@ def get(request, response, storage, *args, **kwargs):
         response.json(obj)
     except NotFound:
         response.status = HTTPStatus.NOT_FOUND
+
+
+def download(request, response, storage, *args, **kwargs):
+    try:
+        file = storage.get_file(request.params["bucket_name"], request.params["object_id"])
+        obj = storage.get_file_obj(request.params["bucket_name"], request.params["object_id"])
+        response.write_file(file, content_type=obj.get("contentType"))
+    except NotFound:
+        response.status = HTTPStatus.NOT_FOUND

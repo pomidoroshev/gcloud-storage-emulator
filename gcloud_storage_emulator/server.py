@@ -23,6 +23,10 @@ HANDLERS = (
     (r"^{}/b/(?P<bucket_name>[-\w]+)$".format(settings.API_ENDPOINT), {GET: buckets.get, DELETE: buckets.delete}),
     (r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.UPLOAD_API_ENDPOINT), {POST: objects.insert}),
     (r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.API_ENDPOINT), {GET: objects.get}),
+    (
+        r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.DOWNLOAD_API_ENDPOINT),
+        {GET: objects.download},
+    ),
 )
 
 
@@ -114,6 +118,12 @@ class Response(object):
         logger.warning("[RESPONSE] Content handled as string, should be handled as stream")
         self._content += content
 
+    def write_file(self, content, content_type="application/octet-stream"):
+        if content_type is not None:
+            self["Content-type"] = content_type
+
+        self._content = content
+
     def json(self, obj):
         self["Content-type"] = "application/json"
         self._content = json.dumps(obj)
@@ -129,7 +139,11 @@ class Response(object):
         for (k, v) in self._headers.items():
             self._handler.send_header(k, v)
 
-        content = self._content.encode("utf-8")
+        content = self._content
+
+        if isinstance(self._content, str):
+            content = self._content.encode("utf-8")
+
         self._handler.send_header("Content-Lenght", str(len(content)))
         self._handler.end_headers()
         self._handler.wfile.write(content)
@@ -158,6 +172,8 @@ class Router(object):
                     raise e
                 break
         else:
+            logger.error("Method not implemented: {} - {}".format(request.method, request.path))
+            logger.error(request)
             response.status = HTTPStatus.NOT_IMPLEMENTED
 
         response.close()
