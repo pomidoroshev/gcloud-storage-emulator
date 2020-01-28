@@ -81,12 +81,12 @@ def insert(request, response, storage, *args, **kwargs):
     name = request.data.get("name")
     if name:
         logger.debug("[BUCKETS] Received request to create bucket with name {}".format(name))
-        if storage.buckets.get(name):
+        if storage.get_bucket(name):
             response.status = HTTPStatus.CONFLICT
             response.json(CONFLICT)
         else:
             bucket = _make_bucket_resource(name)
-            storage.buckets[name] = bucket
+            storage.create_bucket(name, bucket)
             response.json(bucket)
     else:
         response.status = HTTPStatus.BAD_REQUEST

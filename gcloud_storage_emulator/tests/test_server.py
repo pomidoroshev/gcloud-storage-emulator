@@ -1,7 +1,4 @@
-import logging
 import os
-import sys
-import unittest
 from io import BytesIO
 from unittest import TestCase as BaseTestCase
 
@@ -31,7 +28,7 @@ class BucketsTests(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._server = create_server("localhost", 9023)
+        cls._server = create_server("localhost", 9023, in_memory=False)
         cls._server.start()
 
     @classmethod
@@ -39,7 +36,7 @@ class BucketsTests(BaseTestCase):
         cls._server.stop()
 
     def setUp(self):
-        BucketsTests._server.reset()
+        BucketsTests._server.wipe()
         self._session = requests.Session()
         self._client = _get_storage_client(self._session)
 
@@ -83,7 +80,7 @@ class BucketsTests(BaseTestCase):
 class ObjectsTests(BaseTestCase):
     @classmethod
     def setUpClass(cls):
-        cls._server = create_server("localhost", 9023)
+        cls._server = create_server("localhost", 9023, in_memory=False)
         cls._server.start()
 
     @classmethod
@@ -93,7 +90,7 @@ class ObjectsTests(BaseTestCase):
     def setUp(self):
         self._session = requests.Session()
         self._client = _get_storage_client(self._session)
-        ObjectsTests._server.reset()
+        ObjectsTests._server.wipe()
 
     def test_upload_from_string(self):
         content = "this is the content of the file\n"
@@ -195,11 +192,3 @@ class ObjectsTests(BaseTestCase):
 
         with open(test_text, "rb") as file:
             self.assertEqual(fetched_file.getvalue(), file.read())
-
-
-if __name__ == "__main__":
-    root = logging.getLogger("")
-    ch = logging.StreamHandler()
-    root.addHandler(ch)
-    root.setLevel(logging.DEBUG)
-    sys.exit(unittest.main())

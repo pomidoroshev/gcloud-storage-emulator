@@ -236,8 +236,8 @@ class APIThread(threading.Thread):
 
 
 class Server(object):
-    def __init__(self, host, port):
-        self._storage = Storage()
+    def __init__(self, host, port, in_memory=False):
+        self._storage = Storage(use_memory_fs=in_memory)
         self._api = APIThread(host, port, self._storage)
 
     def start(self):
@@ -247,8 +247,8 @@ class Server(object):
     def stop(self):
         self._api.join(timeout=1)
 
-    def reset(self):
-        self._storage.reset()
+    def wipe(self):
+        self._storage.wipe()
 
     def run(self):
         try:
@@ -266,6 +266,6 @@ class Server(object):
             self.stop()
 
 
-def create_server(host, port):
+def create_server(host, port, in_memory):
     logger.info("Starting server at {}:{}".format(host, port))
-    return Server(host, port)
+    return Server(host, port, in_memory=in_memory)
