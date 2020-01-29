@@ -51,7 +51,7 @@ class BucketsTests(BaseTestCase):
 
     def test_bucket_list(self):
         bucket = self._client.create_bucket("bucket_name")
-        all_bucket_names = [bucket.name for bucket in self._client.list_buckets()]
+        all_bucket_names = [b.name for b in self._client.list_buckets()]
         self.assertIn(bucket.name, all_bucket_names)
 
     def test_bucket_get_existing(self):

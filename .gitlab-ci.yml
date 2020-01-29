@@ -1,0 +1,31 @@
+stages:
+  - list
+  - test
+
+.test:
+  stage: test
+  before_script:
+    - mkdir .reports
+  artifacts:
+    reports:
+      junit: .reports/django-tests.xml
+
+python 3.7 test:
+  extends: .test
+  image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python37:latest
+  script: tox -e py37
+
+python 3.6 test:
+  extends: .test
+  image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python37:latest
+  script: tox -e py37
+
+
+flake8:
+  image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python37:latest
+  before_script:
+    - mkdir .reports
+  script: tox -e flake8 -- --format junit-xml --output-file=".reports/flake8.xml"
+  artifacts:
+    reports:
+      junit: .reports/flake8.xml

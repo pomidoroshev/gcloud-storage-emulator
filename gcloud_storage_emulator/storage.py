@@ -263,7 +263,7 @@ class Storage(object):
             with self._fs.opendir(bucket_name) as bucket_dir:
                 bucket_dir.remove(file_name)
         except ResourceNotFound:
-            logger.info("No file to remove '{}/{}'".format(bucket_name, path))
+            logger.info("No file to remove '{}/{}'".format(bucket_name, file_name))
 
     def _delete_dir(self, path, force=True):
         try:
