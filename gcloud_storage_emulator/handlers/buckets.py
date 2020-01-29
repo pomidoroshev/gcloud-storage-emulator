@@ -3,6 +3,7 @@ from datetime import datetime
 from http import HTTPStatus
 
 from gcloud_storage_emulator import settings
+from gcloud_storage_emulator.exceptions import NotFound, Conflict
 
 logger = logging.getLogger("api.bucket")
 
@@ -99,10 +100,9 @@ def delete(request, response, storage, *args, **kwargs):
         response.status = HTTPStatus.BAD_REQUEST
         return response.json(BAD_REQUEST)
 
-    bucket = storage.buckets.get(name)
-
-    if not bucket:
+    try:
+        storage.delete_bucket(name)
+    except NotFound:
         response.status = HTTPStatus.NOT_FOUND
-        return
-
-    del storage.buckets[name]
+    except Conflict:
+        response.status = HTTPStatus.CONFLICT

@@ -120,3 +120,14 @@ class StorageOSFSTests(BaseTestCase):
             self.assertEqual(meta["resumable"], {})
 
         self.assertEqual(file_obj["size"], str(len(content)))
+
+    def test_delete_bucket_stores_meta(self):
+        bucket_obj = {"key": "val"}
+        self.storage.create_bucket("a_bucket", bucket_obj)
+
+        self.storage.delete_bucket("a_bucket")
+
+        meta_path = _get_meta_path()
+        with open(meta_path, "r") as file:
+            meta = json.load(file)
+            self.assertIsNone(meta["buckets"].get('a_bucket'))

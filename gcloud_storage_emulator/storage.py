@@ -1,11 +1,11 @@
 import datetime
-import logging
 import json
+import logging
 
 import fs
 from fs.errors import FileExpected, ResourceNotFound
 
-from gcloud_storage_emulator.exceptions import NotFound
+from gcloud_storage_emulator.exceptions import Conflict, NotFound
 from gcloud_storage_emulator.settings import STORAGE_BASE, STORAGE_DIR
 
 logger = logging.getLogger("storage")
@@ -207,6 +207,41 @@ class Storage(object):
             logger.error("Resource not found:")
             logger.error(e)
             raise NotFound
+
+    def delete_bucket(self, bucket_name):
+        bucket_meta = self.buckets.get(bucket_name)
+        if bucket_meta is None:
+            raise NotFound("Bucket with name '{}' does not exist".format(bucket_name))
+
+        bucket_objects = self.objects.get(bucket_name, {})
+
+        if len(bucket_objects.keys()) != 0:
+            raise Conflict("Bucket '{}' is not empty".format(bucket_name))
+
+        resumable_ids = [
+            file_id
+            for (file_id, file_obj) in self.resumable.items()
+            if file_obj.get('bucket') == bucket_name
+        ]
+
+        if len(resumable_ids) != 0:
+            raise Conflict("Bucket '{}' has pending upload sessions".format(bucket_name))
+
+        del self.buckets[bucket_name]
+
+        self._delete_dir(bucket_name)
+        self._write_config_to_file()
+        # for file_id in resumable_ids:
+        #     del self.resumables
+        # del self.resumable.buckets[name]
+
+    def _delete_dir(self, path, force=True):
+        try:
+            remover = self._fs.removetree if force else self._fs.removedir
+            remover(path)
+        except ResourceNotFound:
+            logger.info("No folder to remove '{}'".format(path))
+            pass
 
     def wipe(self):
         self.buckets = {}

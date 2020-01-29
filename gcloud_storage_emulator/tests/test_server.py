@@ -67,6 +67,16 @@ class BucketsTests(BaseTestCase):
         bucket = self._client.create_bucket('bucket_name')
         bucket.delete()
 
+        with self.assertRaises(NotFound):
+            self._client.get_bucket('bucket_name')
+
+    def test_bucket_delete_removes_file(self):
+        bucket = self._client.create_bucket('bucket_name')
+        bucket.delete()
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            self.assertFalse(pwd.exists('bucket_name'))
+
     def test_bucket_delete_non_existing(self):
         # client.bucket doesn't create the actual bucket resource remotely,
         # it only instantiate it in the local client
@@ -74,7 +84,18 @@ class BucketsTests(BaseTestCase):
         with self.assertRaises(NotFound):
             bucket.delete()
 
-    # TODO: test delete non-empty bucket and delete-force
+    def test_bucket_delete_non_empty(self):
+        bucket = self._client.create_bucket('bucket_name')
+        blob = bucket.blob("canttouchme.txt")
+        blob.upload_from_string('This should prevent deletion if not force')
+
+        with self.assertRaises(Conflict):
+            bucket.delete()
+
+        blob = bucket.blob("canttouchme.txt")
+        self.assertIsNotNone(blob)
+
+    # TODO: test delete-force
 
 
 class ObjectsTests(BaseTestCase):
