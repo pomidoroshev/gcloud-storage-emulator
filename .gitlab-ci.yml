@@ -8,17 +8,22 @@ stages:
     - mkdir .reports
   artifacts:
     reports:
-      junit: .reports/django-tests.xml
+      junit: .reports/tests.xml
+
+include:
+  - template: Code-Quality.gitlab-ci.yml
+  - template: Dependency-Scanning.gitlab-ci.yml
+  - template: SAST.gitlab-ci.yml
 
 python 3.7 test:
   extends: .test
   image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python37:latest
-  script: tox -e py37
+  script: tox -e py37 -- --junitxml=.reports/tests.xml
 
 python 3.6 test:
   extends: .test
-  image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python37:latest
-  script: tox -e py37
+  image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python36:latest
+  script: tox -e py36 -- --junitxml=.reports/tests.xml
 
 
 flake8:
