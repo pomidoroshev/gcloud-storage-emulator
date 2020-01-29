@@ -79,6 +79,12 @@ class Storage(object):
 
         return self.buckets.get(bucket_name)
 
+    def get_file_list(self, bucket_name):
+        try:
+            return list(self.objects[bucket_name].values())
+        except KeyError:
+            raise NotFound
+
     def create_bucket(self, bucket_name, bucket_obj):
         """Create a bucket object representation and save it to the current fs
 
@@ -209,6 +215,15 @@ class Storage(object):
             raise NotFound
 
     def delete_bucket(self, bucket_name):
+        """Delete a bucket's meta and file
+
+        Arguments:
+            bucket_name {str} -- GCS bucket name
+
+        Raises:
+            NotFound: If the bucket doesn't exist
+            Conflict: If the bucket is not empty or there are pending uploads
+        """
         bucket_meta = self.buckets.get(bucket_name)
         if bucket_meta is None:
             raise NotFound("Bucket with name '{}' does not exist".format(bucket_name))
@@ -231,9 +246,24 @@ class Storage(object):
 
         self._delete_dir(bucket_name)
         self._write_config_to_file()
-        # for file_id in resumable_ids:
-        #     del self.resumables
-        # del self.resumable.buckets[name]
+
+    def delete_file(self, bucket_name, file_name):
+        try:
+            self.objects[bucket_name][file_name]
+        except KeyError:
+            raise NotFound("Object with name '{}' does not exist in bucket '{}'".format(bucket_name, file_name))
+
+        del self.objects[bucket_name][file_name]
+
+        self._delete_file(bucket_name, file_name)
+        self._write_config_to_file()
+
+    def _delete_file(self, bucket_name, file_name):
+        try:
+            with self._fs.opendir(bucket_name) as bucket_dir:
+                bucket_dir.remove(file_name)
+        except ResourceNotFound:
+            logger.info("No file to remove '{}/{}'".format(bucket_name, path))
 
     def _delete_dir(self, path, force=True):
         try:
@@ -241,7 +271,6 @@ class Storage(object):
             remover(path)
         except ResourceNotFound:
             logger.info("No folder to remove '{}'".format(path))
-            pass
 
     def wipe(self):
         self.buckets = {}

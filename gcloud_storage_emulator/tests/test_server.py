@@ -41,60 +41,72 @@ class BucketsTests(BaseTestCase):
         self._client = _get_storage_client(self._session)
 
     def test_bucket_creation(self):
-        bucket = self._client.create_bucket('bucket_name')
+        bucket = self._client.create_bucket("bucket_name")
         self.assertEqual(bucket.project_number, 1234)
 
     def test_bucket_creation_no_override(self):
-        self._client.create_bucket('bucket_name')
+        self._client.create_bucket("bucket_name")
         with self.assertRaises(Conflict):
-            self._client.create_bucket('bucket_name')
+            self._client.create_bucket("bucket_name")
 
     def test_bucket_list(self):
-        bucket = self._client.create_bucket('bucket_name')
+        bucket = self._client.create_bucket("bucket_name")
         all_bucket_names = [bucket.name for bucket in self._client.list_buckets()]
         self.assertIn(bucket.name, all_bucket_names)
 
     def test_bucket_get_existing(self):
-        bucket = self._client.create_bucket('bucket_name')
-        fetched_bucket = self._client.get_bucket('bucket_name')
+        bucket = self._client.create_bucket("bucket_name")
+        fetched_bucket = self._client.get_bucket("bucket_name")
         self.assertEqual(fetched_bucket.name, bucket.name)
 
     def test_bucket_get_non_existing(self):
         with self.assertRaises(NotFound):
-            self._client.get_bucket('bucket_name')
+            self._client.get_bucket("bucket_name")
 
     def test_bucket_delete(self):
-        bucket = self._client.create_bucket('bucket_name')
+        bucket = self._client.create_bucket("bucket_name")
         bucket.delete()
 
         with self.assertRaises(NotFound):
-            self._client.get_bucket('bucket_name')
+            self._client.get_bucket("bucket_name")
 
     def test_bucket_delete_removes_file(self):
-        bucket = self._client.create_bucket('bucket_name')
+        bucket = self._client.create_bucket("bucket_name")
         bucket.delete()
 
         with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
-            self.assertFalse(pwd.exists('bucket_name'))
+            self.assertFalse(pwd.exists("bucket_name"))
 
     def test_bucket_delete_non_existing(self):
         # client.bucket doesn't create the actual bucket resource remotely,
         # it only instantiate it in the local client
-        bucket = self._client.bucket('bucket_name')
+        bucket = self._client.bucket("bucket_name")
         with self.assertRaises(NotFound):
             bucket.delete()
 
     def test_bucket_delete_non_empty(self):
-        bucket = self._client.create_bucket('bucket_name')
+        bucket = self._client.create_bucket("bucket_name")
         blob = bucket.blob("canttouchme.txt")
-        blob.upload_from_string('This should prevent deletion if not force')
+        blob.upload_from_string("This should prevent deletion if not force")
 
         with self.assertRaises(Conflict):
             bucket.delete()
 
-        blob = bucket.blob("canttouchme.txt")
+        blob = bucket.get_blob("canttouchme.txt")
         self.assertIsNotNone(blob)
 
+    def test_bucket_force_delete(self):
+        bucket = self._client.create_bucket("bucket_name")
+        blob = bucket.blob("cantouchme.txt")
+        blob.upload_from_string("This should prevent deletion if not force")
+
+        bucket.delete(force=True)
+
+        blob = bucket.get_blob("cantouchme.txt")
+        self.assertIsNone(blob)
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            self.assertFalse(pwd.exists('bucket_name'))
     # TODO: test delete-force
 
 
@@ -213,3 +225,15 @@ class ObjectsTests(BaseTestCase):
 
         with open(test_text, "rb") as file:
             self.assertEqual(fetched_file.getvalue(), file.read())
+
+    def test_delete_object(self):
+        bucket = self._client.create_bucket("bucket_name")
+        blob = bucket.blob("canttouchme.txt")
+        blob.upload_from_string("File content")
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            self.assertTrue(pwd.exists("bucket_name/canttouchme.txt"))
+            blob.delete()
+
+            self.assertIsNone(bucket.get_blob("cantouchme.txt"))
+            self.assertFalse(pwd.exists("bucket_name/canttouchme.txt"))

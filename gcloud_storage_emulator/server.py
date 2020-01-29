@@ -23,10 +23,19 @@ HANDLERS = (
     (r"^{}/b$".format(settings.API_ENDPOINT), {GET: buckets.ls, POST: buckets.insert}),
     (r"^{}/b/(?P<bucket_name>[-\w]+)$".format(settings.API_ENDPOINT), {GET: buckets.get, DELETE: buckets.delete}),
     (
+        r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.API_ENDPOINT),
+        {GET: objects.ls}
+    ),
+    (
+        r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.API_ENDPOINT),
+        {GET: objects.get, DELETE: objects.delete}
+    ),
+
+    # Non-default API endpoints
+    (
         r"^{}/b/(?P<bucket_name>[-\w]+)/o$".format(settings.UPLOAD_API_ENDPOINT),
         {POST: objects.insert, PUT: objects.upload_partial}
     ),
-    (r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.API_ENDPOINT), {GET: objects.get}),
     (
         r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.DOWNLOAD_API_ENDPOINT),
         {GET: objects.download},

@@ -96,7 +96,7 @@ def insert(request, response, storage, *args, **kwargs):
 
 
 def upload_partial(request, response, storage, *args, **kwargs):
-    upload_id = request.query.get('upload_id')[0]
+    upload_id = request.query.get("upload_id")[0]
     obj = storage.create_file_for_resumable_upload(upload_id, request.data)
     return response.json(obj)
 
@@ -109,10 +109,26 @@ def get(request, response, storage, *args, **kwargs):
         response.status = HTTPStatus.NOT_FOUND
 
 
+def ls(request, response, storage, *args, **kwargs):
+    bucket_name = request.params["bucket_name"]
+    files = storage.get_file_list(bucket_name)
+    response.json({
+        "kind": "storage#object",
+        "items": files
+    })
+
+
 def download(request, response, storage, *args, **kwargs):
     try:
         file = storage.get_file(request.params["bucket_name"], request.params["object_id"])
         obj = storage.get_file_obj(request.params["bucket_name"], request.params["object_id"])
         response.write_file(file, content_type=obj.get("contentType"))
+    except NotFound:
+        response.status = HTTPStatus.NOT_FOUND
+
+
+def delete(request, response, storage, *args, **kwargs):
+    try:
+        storage.delete_file(request.params["bucket_name"], request.params["object_id"])
     except NotFound:
         response.status = HTTPStatus.NOT_FOUND
