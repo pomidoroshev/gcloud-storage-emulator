@@ -173,6 +173,16 @@ class ObjectsTests(BaseTestCase):
         blob = bucket.get_blob(file_name)
         self.assertEqual(blob.name, file_name)
 
+    def test_get_unicode(self):
+        file_name = "tmp.ąćęłńóśźż.马铃薯.zip"
+        content = "this is the content of the file\n"
+        bucket = self._client.create_bucket("testbucket")
+        blob = bucket.blob(file_name)
+        blob.upload_from_string(content)
+
+        blob = bucket.get_blob(file_name)
+        self.assertEqual(blob.name, file_name)
+
     def test_get_nonexistant(self):
         bucket = self._client.create_bucket("testbucket")
         res = bucket.get_blob("idonotexist")

@@ -6,7 +6,7 @@ import threading
 import time
 from functools import partial
 from http import server, HTTPStatus
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, unquote
 
 from gcloud_storage_emulator import settings
 from gcloud_storage_emulator.handlers import buckets, objects
@@ -27,7 +27,7 @@ HANDLERS = (
         {GET: objects.ls}
     ),
     (
-        r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.API_ENDPOINT),
+        r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-%.\w]+)$".format(settings.API_ENDPOINT),
         {GET: objects.get, DELETE: objects.delete}
     ),
 
@@ -37,7 +37,7 @@ HANDLERS = (
         {POST: objects.insert, PUT: objects.upload_partial}
     ),
     (
-        r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-.\w]+)$".format(settings.DOWNLOAD_API_ENDPOINT),
+        r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-%.\w]+)$".format(settings.DOWNLOAD_API_ENDPOINT),
         {GET: objects.download},
     ),
 )
@@ -85,6 +85,7 @@ class Request(object):
         self._query = parse_qs(self._parsed_url.query)
         self._methtod = method
         self._data = None
+        self._parsed_params = None
 
     @property
     def path(self):
@@ -108,7 +109,14 @@ class Request(object):
 
     @property
     def params(self):
-        return self._match.groupdict() if self._match else None
+        if not self._match:
+            return None
+
+        if not self._parsed_params:
+            self._parsed_params = {}
+            for k, v in self._match.groupdict().items():
+                self._parsed_params[k] = unquote(v)
+        return self._parsed_params
 
     @property
     def data(self):
