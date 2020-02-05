@@ -51,6 +51,9 @@ HANDLERS = (
 
     # Internal API, not supported by the real GCS
     (r"^/wipe$", {GET: _wipe_data}),
+
+    # Public file serving, same as object.download
+    (r"^/(?P<bucket_name>[-\w]+)/(?P<object_id>[-%.\w]+)$", {GET: objects.download}),
 )
 
 
