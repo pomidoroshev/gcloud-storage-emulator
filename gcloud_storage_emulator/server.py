@@ -19,6 +19,14 @@ POST = "POST"
 PUT = "PUT"
 DELETE = "DELETE"
 
+
+def _wipe_data(req, res, storage):
+    logger.debug('Wiping storage')
+    storage.wipe()
+    logger.debug('Storage wiped')
+    res.write('OK')
+
+
 HANDLERS = (
     (r"^{}/b$".format(settings.API_ENDPOINT), {GET: buckets.ls, POST: buckets.insert}),
     (r"^{}/b/(?P<bucket_name>[-\w]+)$".format(settings.API_ENDPOINT), {GET: buckets.get, DELETE: buckets.delete}),
@@ -40,6 +48,9 @@ HANDLERS = (
         r"^{}/b/(?P<bucket_name>[-\w]+)/o/(?P<object_id>[-%.\w]+)$".format(settings.DOWNLOAD_API_ENDPOINT),
         {GET: objects.download},
     ),
+
+    # Internal API, not supported by the real GCS
+    (r"^/wipe$", {GET: _wipe_data}),
 )
 
 
@@ -201,7 +212,6 @@ class Router(object):
                 break
         else:
             logger.error("Method not implemented: {} - {}".format(request.method, request.path))
-            logger.error(request)
             response.status = HTTPStatus.NOT_IMPLEMENTED
 
         response.close()
