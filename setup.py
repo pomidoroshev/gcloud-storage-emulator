@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='gcloud-storage-emulator',
@@ -8,14 +8,13 @@ setup(
     author='Alessandro Artoni',
     author_email='artoale@potatolondon.com',
     license='MIT',
-    packages=['gcloud_storage_emulator'],
+    packages=find_packages(),
     zip_safe=False,
     scripts=[
         "bin/gcloud-storage-emulator"
     ],
     install_requires=[
         'fs',
-        'grpcio',
         'google-cloud-storage',
         'requests',
     ]
