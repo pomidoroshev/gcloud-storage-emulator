@@ -44,13 +44,14 @@ class Storage(object):
             self.objects = {}
             self.resumable = {}
 
-    def _get_or_create_bucket_dir(self, bucket_name):
+    def _get_or_create_dir(self, bucket_name, file_name):
         try:
             bucket_dir = self._fs.makedir(bucket_name)
         except fs.errors.DirectoryExists:
             bucket_dir = self._fs.opendir(bucket_name)
 
-        return bucket_dir
+        dir_name = fs.path.dirname(file_name)
+        return bucket_dir.makedirs(dir_name, recreate=True)
 
     def get_storage_base(self):
         """Returns the pyfilesystem-compatible fs path to the storage
@@ -110,9 +111,10 @@ class Storage(object):
             file_obj {dict} -- GCS-like Object resource
         """
 
-        bucket_dir = self._get_or_create_bucket_dir(bucket_name)
+        file_dir = self._get_or_create_dir(bucket_name, file_name)
 
-        with bucket_dir.open(file_name, mode="w") as file:
+        base_name = fs.path.basename(file_name)
+        with file_dir.open(base_name, mode="w") as file:
             file.write(content)
             bucket_objects = self.objects.get(bucket_name, {})
             bucket_objects[file_name] = file_obj
@@ -159,9 +161,10 @@ class Storage(object):
         file_obj = self.resumable[file_id]
         bucket_name = file_obj["bucket"]
         file_name = file_obj["name"]
-        bucket_dir = self._get_or_create_bucket_dir(bucket_name)
+        file_dir = self._get_or_create_dir(bucket_name, file_name)
 
-        with bucket_dir.open(file_name, mode="wb") as file:
+        base_name = fs.path.basename(file_name)
+        with file_dir.open(base_name, mode="wb") as file:
             file.write(content)
 
         file_obj["size"] = str(len(content))

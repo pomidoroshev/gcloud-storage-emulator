@@ -247,3 +247,23 @@ class ObjectsTests(BaseTestCase):
 
             self.assertIsNone(bucket.get_blob("cantouchme.txt"))
             self.assertFalse(pwd.exists("bucket_name/canttouchme.txt"))
+
+    def test_create_within_directory(self):
+        bucket = self._client.create_bucket("bucket_name")
+        blob = bucket.blob("this/is/a/nested/file.txt")
+        blob.upload_from_string("Not even joking!")
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            read_content = pwd.readtext("bucket_name/this/is/a/nested/file.txt")
+            self.assertEqual(read_content, "Not even joking!")
+
+    def test_create_within_multiple_time_does_not_break(self):
+        bucket = self._client.create_bucket("bucket_name")
+        blob = bucket.blob("this/is/a/nested/file.txt")
+        blob.upload_from_string("Not even joking!")
+
+        bucket.blob("this/is/another/nested/file.txt")
+        blob.upload_from_string("Yet another one")
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            self.assertTrue(pwd.exists("bucket_name/this/is/a/nested/file.txt"))
