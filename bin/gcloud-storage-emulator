@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     start.add_argument("-q", "--quiet", action="store_true", default=False, help="only outputs critical level logging")
 
-    start.add_argument("--no-store-on-disk", action="store_true", default=False, help="use in-memory storage")
+    start.add_argument("-M", "--no-store-on-disk", action="store_true", default=False, help="use in-memory storage")
 
     subparsers.add_parser("wipe", help="Wipe the local data")
 
