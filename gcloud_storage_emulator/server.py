@@ -246,6 +246,9 @@ class RequestHandler(server.BaseHTTPRequestHandler):
         router = Router(self)
         router.handle(PUT)
 
+    def log_message(self, format, *args):
+        logger.info(format % args)
+
 
 class APIThread(threading.Thread):
     def __init__(self, host, port, storage, *args, **kwargs):
