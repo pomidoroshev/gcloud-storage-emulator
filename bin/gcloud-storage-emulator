@@ -10,6 +10,7 @@ from gcloud_storage_emulator.server import create_server
 DEFAULT_PORT = 9023
 DEFAULT_HOST = "localhost"
 
+
 def main(host, port, memory=False):
     server = create_server(host, port, memory)
     return server.run()
