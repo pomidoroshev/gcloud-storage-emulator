@@ -8,7 +8,7 @@ from gcloud_storage_emulator.server import create_server
 
 # One after gcloud-task-emulator one
 DEFAULT_PORT = 9023
-
+DEFAULT_HOST = "localhost"
 
 def main(host, port, memory=False):
     server = create_server(host, port, memory)
@@ -31,9 +31,14 @@ if __name__ == "__main__":
     start.add_argument(
         "--port", type=int, help="the port to run the server on", default=DEFAULT_PORT
     )
-    start.add_argument("--quiet", action="store_true", default=False)
 
-    start.add_argument("--no-store-on-disk", action="store_true", default=False)
+    start.add_argument(
+        "-H", "--host", help="the host to run the server on", default=DEFAULT_HOST
+    )
+
+    start.add_argument("-q", "--quiet", action="store_true", default=False, help="only outputs critical level logging")
+
+    start.add_argument("--no-store-on-disk", action="store_true", default=False, help="use in-memory storage")
 
     subparsers.add_parser("wipe", help="Wipe the local data")
 
@@ -60,4 +65,4 @@ if __name__ == "__main__":
     else:
         root.setLevel(logging.DEBUG)
 
-    sys.exit(main("localhost", args.port, args.no_store_on_disk))
+    sys.exit(main(args.host, args.port, args.no_store_on_disk))

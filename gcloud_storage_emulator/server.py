@@ -21,10 +21,14 @@ DELETE = "DELETE"
 
 
 def _wipe_data(req, res, storage):
-    logger.debug('Wiping storage')
+    logger.debug("Wiping storage")
     storage.wipe()
-    logger.debug('Storage wiped')
-    res.write('OK')
+    logger.debug("Storage wiped")
+    res.write("OK")
+
+
+def _health_check(req, res, storage):
+    res.write("OK")
 
 
 HANDLERS = (
@@ -50,7 +54,8 @@ HANDLERS = (
     ),
 
     # Internal API, not supported by the real GCS
-    (r"^/wipe$", {GET: _wipe_data}),
+    (r"^/$", {GET: _health_check}),  # Health check endpoint
+    (r"^/wipe$", {GET: _wipe_data}),  # Wipe all data
 
     # Public file serving, same as object.download
     (r"^/(?P<bucket_name>[-\w]+)/(?P<object_id>[-%.\w]+)$", {GET: objects.download}),
