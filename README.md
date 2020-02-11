@@ -4,9 +4,9 @@ Google doesn't (yet) ship an emulator for the Cloud Storage API like they do for
 Cloud Datastore.
 
 This is a stub emulator so you can run your tests and do local development without
-having to connect to the production Storage API.
+having to connect to the production Storage APIs.
 
-**THIS IS A WORK IN PROGRESS NOT ALL API CALLS ARE COMPLETE**
+**THIS IS A WORK IN PROGRESS AND ONLY SUPPORTS A LIMITED SUBSET OF API**
 
 ## CLI Usage
 
@@ -46,3 +46,5 @@ server.stop()
 ```
 
 You can wipe the data (e.g. for text execution) by calling `server.wipe()`
+
+This can also be achieved (e.g. during tests) by hitting the `/wipe` endpoint

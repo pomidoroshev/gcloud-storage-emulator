@@ -1,21 +1,48 @@
+import os
 from setuptools import setup, find_packages
 
+NAME = "gcloud-storage-emulator"
+PACKAGES = find_packages()
+
+DESCRIPTION = "A stub emulator for the Google Cloud Storage API"
+URL = "https://gitlab.com/potato-oss/google-cloud/gcloud-storage-emulator"
+LONG_DESCRIPTION = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
+
+AUTHOR = "Potato London Ltd."
+AUTHOR_EMAIL = "mail@p.ota.to"
+
+if os.environ.get('CI_COMMIT_TAG'):
+    VERSION = os.environ['CI_COMMIT_TAG']
+else:
+    raise Exception("Can only publish from tag")
+
 setup(
-    name='gcloud-storage-emulator',
-    version='0.1',
-    description='A stub emulator for the Google Cloud Storage API',
-    url='https://gitlab.com/potato-oss/gcloud-tasks-emulator',
-    author='Alessandro Artoni',
-    author_email='artoale@potatolondon.com',
-    license='MIT',
+    name=NAME,
+    version=VERSION,
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/markdown",
+    url=URL,
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    license="MIT",
     packages=find_packages(),
     zip_safe=False,
+    keywords=["Google Cloud Storage", "Google App Engine", "GAE", "GCS"],
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+    ],
     scripts=[
         "bin/gcloud-storage-emulator"
     ],
     install_requires=[
-        'fs',
-        'google-cloud-storage',
-        'requests',
-    ]
+        "fs",
+        "google-cloud-storage",
+        "requests",
+    ],
+    python_requires='>=3.6',
 )
