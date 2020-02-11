@@ -1,4 +1,5 @@
 stages:
+  - prepare
   - lint
   - test
   - build
