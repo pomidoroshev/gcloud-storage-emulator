@@ -18,10 +18,6 @@ no_needs:
   stage: prepare
   dependencies: []
   image: alpine:latest
-  only:
-    - merge_requests
-    - staging
-    - master
   variables:
     GIT_STRATEGY: none
   script:
