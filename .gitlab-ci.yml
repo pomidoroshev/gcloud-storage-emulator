@@ -87,5 +87,5 @@ publish to prod pypi:
   script:
     - python -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
   variables:
-    TWINE_PASSWORD: $TEST_PYPI_TOKEN
+    TWINE_PASSWORD: $PROD_PYPI_TOKEN
     TWINE_USERNAME: __token__
