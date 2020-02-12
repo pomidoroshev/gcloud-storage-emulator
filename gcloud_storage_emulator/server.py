@@ -12,7 +12,7 @@ from gcloud_storage_emulator import settings
 from gcloud_storage_emulator.handlers import buckets, objects
 from gcloud_storage_emulator.storage import Storage
 
-logger = logging.getLogger("gcloud-storage-emulator")
+logger = logging.getLogger(__name__)
 
 GET = "GET"
 POST = "POST"

@@ -8,7 +8,7 @@ from fs.errors import FileExpected, ResourceNotFound
 from gcloud_storage_emulator.exceptions import Conflict, NotFound
 from gcloud_storage_emulator.settings import STORAGE_BASE, STORAGE_DIR
 
-logger = logging.getLogger("storage")
+logger = logging.getLogger(__name__)
 
 
 class Storage(object):
