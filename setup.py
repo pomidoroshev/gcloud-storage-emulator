@@ -25,7 +25,6 @@ setup(
     url=URL,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
-    license="MIT",
     packages=find_packages(),
     zip_safe=False,
     keywords=["Google Cloud Storage", "Google App Engine", "GAE", "GCS"],
