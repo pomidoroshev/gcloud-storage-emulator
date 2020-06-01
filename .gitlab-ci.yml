@@ -13,17 +13,6 @@ stages:
     reports:
       junit: .reports/tests.xml
 
-no_needs:
-  interruptible: true
-  stage: prepare
-  dependencies: []
-  image: alpine:latest
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - echo "This build is a workaround for 'https://gitlab.com/gitlab-org/gitlab/issues/30631'"
-
-
 include:
   - template: Code-Quality.gitlab-ci.yml
   - template: Dependency-Scanning.gitlab-ci.yml
@@ -31,7 +20,7 @@ include:
 
 python 3.7 test:
   interruptible: true
-  needs: ["no_needs"]
+  needs: []
   extends: .test
   image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python37:latest
   script: tox -e py37 -- --junitxml=.reports/tests.xml
@@ -39,7 +28,7 @@ python 3.7 test:
 python 3.6 test:
   interruptible: true
   extends: .test
-  needs: ["no_needs"]
+  needs: []
   image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python36:latest
   script: tox -e py36 -- --junitxml=.reports/tests.xml
 
@@ -47,7 +36,7 @@ python 3.6 test:
 flake8:
   interruptible: true
   stage: lint
-  needs: ["no_needs"]
+  needs: []
   image: registry.gitlab.com/potato-oss/google-cloud/django-gcloud-connectors/python37:latest
   before_script:
     - mkdir .reports
