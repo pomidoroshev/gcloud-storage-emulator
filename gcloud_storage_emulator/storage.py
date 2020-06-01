@@ -80,11 +80,46 @@ class Storage(object):
 
         return self.buckets.get(bucket_name)
 
-    def get_file_list(self, bucket_name):
-        try:
-            return list(self.objects[bucket_name].values())
-        except KeyError:
+    def get_file_list(self, bucket_name, prefix=None, delimiter=None):
+        """Lists all the blobs in the bucket that begin with the prefix.
+
+        This can be used to list all blobs in a "folder", e.g. "public/".
+
+        The delimiter argument can be used to restrict the results to only the
+        "files" in the given "folder". Without the delimiter, the entire tree under
+        the prefix is returned. For example, given these blobs:
+
+            a/1.txt
+            a/b/2.txt
+
+        If you just specify prefix = 'a', you'll get back:
+
+            a/1.txt
+            a/b/2.txt
+
+        However, if you specify prefix='a' and delimiter='/', you'll get back:
+
+            a/1.txt
+
+        Additionally, the same request will return blobs.prefixes populated with:
+
+            a/b/
+
+        Source: https://cloud.google.com/storage/docs/listing-objects#storage-list-objects-python
+        """
+
+        if bucket_name not in self.buckets:
             raise NotFound
+
+        bucket_objects = self.objects.get(bucket_name, {})
+        if prefix:
+            # TODO: Still need to implement the last part of the doc string above to
+            # TODO: populate blobs.prefixes when using a delimiter.
+            return list(file_object for file_name, file_object in bucket_objects.items()
+                        if file_name.startswith(prefix)
+                        and (not delimiter or delimiter not in file_name[len(prefix+delimiter):]))
+        else:
+            return list(bucket_objects.values())
 
     def create_bucket(self, bucket_name, bucket_obj):
         """Create a bucket object representation and save it to the current fs

@@ -111,11 +111,17 @@ def get(request, response, storage, *args, **kwargs):
 
 def ls(request, response, storage, *args, **kwargs):
     bucket_name = request.params["bucket_name"]
-    files = storage.get_file_list(bucket_name)
-    response.json({
-        "kind": "storage#object",
-        "items": files
-    })
+    prefix = request.query.get("prefix")[0] if request.query.get("prefix") else None
+    delimiter = request.query.get('delimiter')[0] if request.query.get("delimiter") else None
+    try:
+        files = storage.get_file_list(bucket_name, prefix, delimiter)
+    except NotFound:
+        response.status = HTTPStatus.NOT_FOUND
+    else:
+        response.json({
+            "kind": "storage#object",
+            "items": files
+        })
 
 
 def download(request, response, storage, *args, **kwargs):

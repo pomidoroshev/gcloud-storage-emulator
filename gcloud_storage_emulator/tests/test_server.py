@@ -267,3 +267,70 @@ class ObjectsTests(BaseTestCase):
 
         with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
             self.assertTrue(pwd.exists("bucket_name/this/is/a/nested/file.txt"))
+
+    def _assert_blob_list(self, expected, actual):
+        self.assertEqual(
+            [b.name for b in expected],
+            [b.name for b in actual])
+
+    def test_list_blobs_on_nonexistent_bucket(self):
+        blobs = self._client.list_blobs("bucket_name")
+        with self.assertRaises(NotFound):
+            list(blobs)
+
+    def test_list_blobs_on_empty_bucket(self):
+        bucket = self._client.create_bucket("bucket_name")
+        blobs = self._client.list_blobs(bucket)
+        self._assert_blob_list(blobs, [])
+
+    def test_list_blobs_on_entire_bucket(self):
+
+        bucket_1 = self._client.create_bucket("bucket_name_1")
+        bucket_2 = self._client.create_bucket("bucket_name_2")
+
+        blob_1 = bucket_1.blob("a/b.txt")
+        blob_1.upload_from_string("text")
+
+        blob_2 = bucket_1.blob("c/d.txt")
+        blob_2.upload_from_string("text")
+
+        blob_3 = bucket_2.blob("a/b.txt")
+        blob_3.upload_from_string("text")
+
+        blobs = self._client.list_blobs(bucket_1)
+        self._assert_blob_list(blobs, [blob_1, blob_2])
+
+    def test_list_blobs_with_prefix(self):
+        bucket = self._client.create_bucket("bucket_name")
+
+        blob_1 = bucket.blob("a/b.txt")
+        blob_1.upload_from_string("text")
+
+        blob_2 = bucket.blob("a/b/c.txt")
+        blob_2.upload_from_string("text")
+
+        blob_3 = bucket.blob("b/c.txt")
+        blob_3.upload_from_string("text")
+
+        blobs = self._client.list_blobs(bucket, prefix='a')
+
+        self._assert_blob_list(blobs, [blob_1, blob_2])
+
+    def test_list_blobs_with_prefix_and_delimiter(self):
+        bucket = self._client.create_bucket("bucket_name")
+
+        blob_1 = bucket.blob("a/b.txt")
+        blob_1.upload_from_string("text")
+
+        blob_2 = bucket.blob("a/c.txt")
+        blob_2.upload_from_string("text")
+
+        blob_3 = bucket.blob("a/b/c.txt")
+        blob_3.upload_from_string("text")
+
+        blob_4 = bucket.blob("b/c.txt")
+        blob_4.upload_from_string("text")
+
+        blobs = self._client.list_blobs(bucket, prefix='a', delimiter='/')
+
+        self._assert_blob_list(blobs, [blob_1, blob_2])
