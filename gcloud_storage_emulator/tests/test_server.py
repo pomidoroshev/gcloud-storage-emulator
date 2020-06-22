@@ -59,6 +59,11 @@ class BucketsTests(BaseTestCase):
         fetched_bucket = self._client.get_bucket("bucket_name")
         self.assertEqual(fetched_bucket.name, bucket.name)
 
+    def test_bucket_get_existing_with_dot(self):
+        bucket = self._client.create_bucket("bucket.name")
+        fetched_bucket = self._client.get_bucket("bucket.name")
+        self.assertEqual(fetched_bucket.name, bucket.name)
+
     def test_bucket_get_non_existing(self):
         with self.assertRaises(NotFound):
             self._client.get_bucket("bucket_name")
