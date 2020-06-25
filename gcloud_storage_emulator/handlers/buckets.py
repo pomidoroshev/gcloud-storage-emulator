@@ -78,11 +78,21 @@ def ls(request, response, storage, *args, **kwargs):
     })
 
 
+def create_bucket(name, storage):
+    if storage.get_bucket(name):
+        return False
+    else:
+        bucket = _make_bucket_resource(name)
+        storage.create_bucket(name, bucket)
+        return bucket
+
+
 def insert(request, response, storage, *args, **kwargs):
     name = request.data.get("name")
     if name:
         logger.debug("[BUCKETS] Received request to create bucket with name {}".format(name))
-        if storage.get_bucket(name):
+        bucket = create_bucket(name, storage)
+        if not bucket:
             response.status = HTTPStatus.CONFLICT
             response.json(CONFLICT)
         else:
