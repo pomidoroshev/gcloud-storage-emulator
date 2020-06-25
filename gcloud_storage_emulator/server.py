@@ -274,8 +274,11 @@ class APIThread(threading.Thread):
 
 
 class Server(object):
-    def __init__(self, host, port, in_memory=False):
+    def __init__(self, host, port, in_memory=False, default_bucket=None):
         self._storage = Storage(use_memory_fs=in_memory)
+        if default_bucket:
+            logging.debug('[SERVER] Creating default bucket "{}"'.format(default_bucket))
+            buckets.create_bucket(default_bucket, self._storage)
         self._api = APIThread(host, port, self._storage)
 
     def start(self):
@@ -304,6 +307,6 @@ class Server(object):
             self.stop()
 
 
-def create_server(host, port, in_memory):
+def create_server(host, port, in_memory, default_bucket=None):
     logger.info("Starting server at {}:{}".format(host, port))
-    return Server(host, port, in_memory=in_memory)
+    return Server(host, port, in_memory=in_memory, default_bucket=default_bucket)

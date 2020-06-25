@@ -115,6 +115,20 @@ class BucketsTests(BaseTestCase):
     # TODO: test delete-force
 
 
+class DefaultBucketTests(BaseTestCase):
+    def tearDown(self):
+        if self._server:
+            self._server.stop()
+        return super().tearDown()
+
+    def test_bucket_created(self):
+        self._server = create_server("localhost", 9023, in_memory=True, default_bucket="example.appspot.com")
+        self._server.start()
+        self._session = requests.Session()
+        self._client = _get_storage_client(self._session)
+        self._client.get_bucket("example.appspot.com")
+
+
 class ObjectsTests(BaseTestCase):
     @classmethod
     def setUpClass(cls):

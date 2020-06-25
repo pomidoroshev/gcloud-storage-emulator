@@ -11,8 +11,8 @@ DEFAULT_PORT = 9023
 DEFAULT_HOST = "localhost"
 
 
-def main(host, port, memory=False):
-    server = create_server(host, port, memory)
+def main(host, port, memory=False, default_bucket=None):
+    server = create_server(host, port, memory, default_bucket)
     return server.run()
 
 
@@ -35,6 +35,10 @@ if __name__ == "__main__":
 
     start.add_argument(
         "-H", "--host", help="the host to run the server on", default=DEFAULT_HOST
+    )
+
+    start.add_argument(
+        "--default-bucket", help="The default bucket. If provided, bucket will be created automatically"
     )
 
     start.add_argument("-q", "--quiet", action="store_true", default=False, help="only outputs critical level logging")
@@ -66,4 +70,4 @@ if __name__ == "__main__":
     else:
         root.setLevel(logging.DEBUG)
 
-    sys.exit(main(args.host, args.port, args.no_store_on_disk))
+    sys.exit(main(args.host, args.port, args.no_store_on_disk, args.default_bucket))
