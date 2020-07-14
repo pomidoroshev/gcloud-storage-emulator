@@ -124,6 +124,27 @@ def ls(request, response, storage, *args, **kwargs):
         })
 
 
+def copy(request, response, storage, *args, **kwargs):
+    try:
+        obj = storage.get_file_obj(request.params["bucket_name"], request.params["object_id"])
+    except NotFound:
+        response.status = HTTPStatus.NOT_FOUND
+        return
+
+    dest_obj = _make_object_resource(
+        request.base_url,
+        request.params["dest_bucket_name"],
+        request.params["dest_object_id"],
+        obj["contentType"],
+        obj["size"],
+    )
+
+    file = storage.get_file(request.params["bucket_name"], request.params["object_id"])
+    storage.create_file(request.params["dest_bucket_name"], request.params["dest_object_id"], str(file), dest_obj)
+
+    response.json(dest_obj)
+
+
 def download(request, response, storage, *args, **kwargs):
     try:
         file = storage.get_file(request.params["bucket_name"], request.params["object_id"])
