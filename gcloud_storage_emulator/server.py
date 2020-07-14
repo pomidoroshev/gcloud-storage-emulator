@@ -42,6 +42,11 @@ HANDLERS = (
         r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>[-%.\w]+)$".format(settings.API_ENDPOINT),
         {GET: objects.get, DELETE: objects.delete}
     ),
+    (
+        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>[-%.\w]+)/copyTo/b/".format(settings.API_ENDPOINT)
+        + r"(?P<dest_bucket_name>[-.\w]+)/o/(?P<dest_object_id>[-%.\w]+)$",
+        {POST: objects.copy}
+    ),
 
     # Non-default API endpoints
     (

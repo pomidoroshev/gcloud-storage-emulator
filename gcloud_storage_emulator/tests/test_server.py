@@ -353,3 +353,22 @@ class ObjectsTests(BaseTestCase):
         blobs = self._client.list_blobs(bucket, prefix='a', delimiter='/')
 
         self._assert_blob_list(blobs, [blob_1, blob_2])
+
+    def test_bucket_copy_existing(self):
+        bucket = self._client.create_bucket("bucket_name")
+
+        blob_1 = bucket.blob("a/b.txt")
+        blob_1.upload_from_string("text")
+
+        blob_2 = bucket.rename_blob(blob_1, "c/d.txt")
+
+        blobs = self._client.list_blobs(bucket)
+        self._assert_blob_list(blobs, [blob_2])
+
+    def test_bucket_copy_non_existing(self):
+        bucket = self._client.create_bucket("bucket_name")
+
+        blob_1 = bucket.blob("a/b.txt")
+
+        with self.assertRaises(NotFound):
+            bucket.rename_blob(blob_1, "c/d.txt")
