@@ -1,11 +1,12 @@
-import email
 import json
 import logging
 import re
 import threading
 import time
+from email.parser import BytesParser
 from functools import partial
 from http import server, HTTPStatus
+from io import BytesIO
 from urllib.parse import parse_qs, urlparse, unquote
 
 from gcloud_storage_emulator import settings
@@ -80,9 +81,11 @@ def _read_data(request_handler):
         return json.loads(raw_data, encoding="utf-8")
 
     if content_type.startswith("multipart/"):
-        content = "Content-Type:" + content_type + "\r\n"
-        content += raw_data.decode("utf-8")
-        msg = email.message_from_string(content)
+        parser = BytesParser()
+        header = bytes("Content-Type:" + content_type + "\r\n", "utf-8")
+        file_ish = BytesIO(header + raw_data)
+        file_ish.seek(0)
+        msg = parser.parse(file_ish)
 
         payload = msg.get_payload()
 
