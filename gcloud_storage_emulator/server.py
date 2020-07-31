@@ -93,7 +93,7 @@ def _read_data(request_handler):
         # object, and the second (and only other) part, the file content
         return {
             "meta": json.loads(payload[0].get_payload(), encoding="utf-8"),
-            "content": payload[1].get_payload(),
+            "content": payload[1].get_payload(decode=True),
             "content-type": payload[1].get_content_type(),
         }
 

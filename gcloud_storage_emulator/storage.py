@@ -142,14 +142,14 @@ class Storage(object):
         Arguments:
             bucket_name {str} -- Name of the bucket to save to
             file_name {str} -- File name used to store data
-            content {str} -- Content of the file to write
+            content {bytes} -- Content of the file to write
             file_obj {dict} -- GCS-like Object resource
         """
 
         file_dir = self._get_or_create_dir(bucket_name, file_name)
 
         base_name = fs.path.basename(file_name)
-        with file_dir.open(base_name, mode="w") as file:
+        with file_dir.open(base_name, mode="wb") as file:
             file.write(content)
             bucket_objects = self.objects.get(bucket_name, {})
             bucket_objects[file_name] = file_obj
