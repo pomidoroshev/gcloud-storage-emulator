@@ -219,7 +219,7 @@ class Router(object):
                 try:
                     handler(request, response, self._request_handler.storage)
                 except Exception as e:
-                    logger.error("An error has occured while running the handler for {} {}".format(
+                    logger.error("An error has occurred while running the handler for {} {}".format(
                         request.method,
                         request.full_url,
                     ))
