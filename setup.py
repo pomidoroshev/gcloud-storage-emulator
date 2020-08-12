@@ -36,7 +36,8 @@ setup(
         'Programming Language :: Python',
     ],
     scripts=[
-        "bin/gcloud-storage-emulator"
+        "bin/gcloud-storage-emulator",
+        "bin/gcloud-storage-emulator.py"
     ],
     install_requires=[
         "fs",
