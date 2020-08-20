@@ -24,6 +24,23 @@ def _get_storage_client(http):
     )
 
 
+class ServerBaseCase(BaseTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls._server = create_server("localhost", 9023, in_memory=False)
+        cls._server.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._server.stop()
+
+    def setUp(self):
+        self._session = requests.Session()
+        self._client = _get_storage_client(self._session)
+        ObjectsTests._server.wipe()
+
+
 class BucketsTests(BaseTestCase):
 
     @classmethod
@@ -129,20 +146,7 @@ class DefaultBucketTests(BaseTestCase):
         self._client.get_bucket("example.appspot.com")
 
 
-class ObjectsTests(BaseTestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls._server = create_server("localhost", 9023, in_memory=False)
-        cls._server.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._server.stop()
-
-    def setUp(self):
-        self._session = requests.Session()
-        self._client = _get_storage_client(self._session)
-        ObjectsTests._server.wipe()
+class ObjectsTests(ServerBaseCase):
 
     def test_upload_from_string(self):
         content = "this is the content of the file\n"
@@ -372,3 +376,35 @@ class ObjectsTests(BaseTestCase):
 
         with self.assertRaises(NotFound):
             bucket.rename_blob(blob_1, "c/d.txt")
+
+
+class HttpEndpointsTest(ServerBaseCase):
+    """ Tests for the HTTP endpoints defined by server.HANDLERS. """
+
+    def _url(self, path):
+        return os.environ["STORAGE_EMULATOR_HOST"] + path
+
+    def test_download_by_url(self):
+        """ Objects should be downloadable over HTTP from the emulator client. """
+        content = "Here is some content"
+        bucket = self._client.create_bucket("anotherbucket")
+        blob = bucket.blob("something.txt")
+        blob.upload_from_string(content)
+
+        url = self._url("/anotherbucket/something.txt")
+        response = requests.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, content.encode('utf-8'))
+
+    def test_download_file_within_folder(self):
+        """ Cloud Storage allows folders within buckets, so the download URL should allow for this.
+        """
+        content = "Here is some content"
+        bucket = self._client.create_bucket("yetanotherbucket")
+        blob = bucket.blob("folder/containing/something.txt")
+        blob.upload_from_string(content)
+
+        url = self._url("/yetanotherbucket/folder/containing/something.txt")
+        response = requests.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, content.encode('utf-8'))
