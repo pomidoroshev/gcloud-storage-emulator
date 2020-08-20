@@ -33,7 +33,9 @@ def _health_check(req, res, storage):
 
 HANDLERS = (
     (r"^{}/b$".format(settings.API_ENDPOINT), {GET: buckets.ls, POST: buckets.insert}),
-    (r"^{}/b/(?P<bucket_name>[-.\w]+)$".format(settings.API_ENDPOINT), {GET: buckets.get, DELETE: buckets.delete}),
+    (
+        r"^{}/b/(?P<bucket_name>[-.\w]+)$".format(settings.API_ENDPOINT),
+        {GET: buckets.get, DELETE: buckets.delete}),
     (
         r"^{}/b/(?P<bucket_name>[-.\w]+)/o$".format(settings.API_ENDPOINT),
         {GET: objects.ls}
@@ -54,7 +56,9 @@ HANDLERS = (
         {POST: objects.insert, PUT: objects.upload_partial}
     ),
     (
-        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>(?:[-%.\w]+/)*[-%.\w]+)$".format(settings.DOWNLOAD_API_ENDPOINT),
+        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>(?:[-%.\w]+/)*[-%.\w]+)$".format(
+            settings.DOWNLOAD_API_ENDPOINT
+        ),
         {GET: objects.download},
     ),
 
