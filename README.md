@@ -71,3 +71,29 @@ server.stop()
 You can wipe the data (e.g. for text execution) by calling `server.wipe()`
 
 This can also be achieved (e.g. during tests) by hitting the `/wipe` endpoint
+
+
+## Running Tests
+
+### With Tox
+
+If you have Tox installed then you can run tests with:
+
+```bash
+tox -e py37 -- {extra_pytest_args}
+```
+
+### With Docker
+
+If you don't have Tox installed on your system but you do have Docker, then you can run the tests using the [themattrix/tox](https://github.com/themattrix/docker-tox) image:
+
+```bash
+docker run -v /ABSOLUTE/PATH/TO/THIS/REPO/ON/YOUR/MACHINE:/app themattrix/tox tox -e py37 [optional additional args for tox...]
+```
+
+### With unittest
+
+* Create and activate a virtualenv (optional but recommended)
+* `cd` into the repository directory
+* `pip install -e`
+* `python -m unittest gcloud_storage_emulator.tests`
