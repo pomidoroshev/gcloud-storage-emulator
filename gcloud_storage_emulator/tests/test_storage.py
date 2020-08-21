@@ -72,16 +72,16 @@ class StorageOSFSTests(BaseTestCase):
 
     def test_create_file_stores_content(self):
         test_file = os.path.join(os.getcwd(), STORAGE_BASE, STORAGE_DIR, "a_bucket_name", "file_name.txt")
-        content = "Łukas is a great developer"
+        content = "Łukas is a great developer".encode("utf8")
         file_obj = {}
         self.storage.create_file("a_bucket_name", "file_name.txt", content, file_obj)
 
-        with open(test_file, "r") as file:
+        with open(test_file, "rb") as file:
             read_content = file.read()
             self.assertEqual(read_content, content)
 
     def test_create_file_stores_meta(self):
-        content = "Łukas is a great developer"
+        content = "Łukas is a great developer".encode("utf8")
         file_obj = {"key": "val"}
         self.storage.create_file("a_bucket_name", "file_name.txt", content, file_obj)
         meta_path = _get_meta_path()

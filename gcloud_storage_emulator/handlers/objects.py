@@ -140,7 +140,7 @@ def copy(request, response, storage, *args, **kwargs):
     )
 
     file = storage.get_file(request.params["bucket_name"], request.params["object_id"])
-    storage.create_file(request.params["dest_bucket_name"], request.params["dest_object_id"], str(file), dest_obj)
+    storage.create_file(request.params["dest_bucket_name"], request.params["dest_object_id"], file, dest_obj)
 
     response.json(dest_obj)
 
