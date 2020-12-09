@@ -186,6 +186,21 @@ class ObjectsTests(ServerBaseCase):
             expected_content = file.read()
             self.assertEqual(read_content, expected_content)
 
+    def test_upload_from_bin_file_cr_lf(self):
+        content = b'\r\rheeeeei\r\n'
+        test_binary = BytesIO(content)
+        bucket = self._client.create_bucket("testbucket")
+        blob = bucket.blob("binary_cr.png")
+
+        blob.upload_from_file(
+            test_binary, size=len(content)
+        )
+
+        with fs.open_fs(STORAGE_BASE + STORAGE_DIR) as pwd:
+            read_content = pwd.readbytes("testbucket/binary_cr.png")
+
+        self.assertEqual(read_content, content)
+
     def test_get(self):
         file_name = "testblob-name.txt"
         content = "this is the content of the file\n"

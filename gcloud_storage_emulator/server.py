@@ -6,7 +6,6 @@ import time
 from email.parser import BytesParser
 from functools import partial
 from http import server, HTTPStatus
-from io import BytesIO
 from urllib.parse import parse_qs, urlparse, unquote
 
 from gcloud_storage_emulator import settings
@@ -87,10 +86,8 @@ def _read_data(request_handler):
     if content_type.startswith("multipart/"):
         parser = BytesParser()
         header = bytes("Content-Type:" + content_type + "\r\n", "utf-8")
-        file_ish = BytesIO(header + raw_data)
-        file_ish.seek(0)
-        msg = parser.parse(file_ish)
 
+        msg = parser.parsebytes(header + raw_data)
         payload = msg.get_payload()
 
         # For multipart upload, google API expect the first item to be a json-encoded
