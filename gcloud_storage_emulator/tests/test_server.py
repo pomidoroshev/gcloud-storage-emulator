@@ -416,10 +416,10 @@ class HttpEndpointsTest(ServerBaseCase):
         """
         content = "Here is some content"
         bucket = self._client.create_bucket("yetanotherbucket")
-        blob = bucket.blob("folder/containing/something.txt")
+        blob = bucket.blob("folder/contain~ing/something~v-1.0.α.txt")
         blob.upload_from_string(content)
 
-        url = self._url("/yetanotherbucket/folder/containing/something.txt")
+        url = self._url("/yetanotherbucket/folder/contain~ing/something~v-1.0.α.txt")
         response = requests.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, content.encode('utf-8'))
