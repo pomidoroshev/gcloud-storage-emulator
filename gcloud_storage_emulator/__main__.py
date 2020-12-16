@@ -4,7 +4,9 @@ import argparse
 import logging
 import sys
 
+from gcloud_storage_emulator.handlers.buckets import create_bucket
 from gcloud_storage_emulator.server import create_server
+from gcloud_storage_emulator.storage import Storage
 
 # One after gcloud-task-emulator one
 DEFAULT_PORT = 9023
@@ -27,6 +29,7 @@ def wipe():
 def prepare_args_parser():
     parser = argparse.ArgumentParser(description="Google Cloud Storage Emulator")
     subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
+
     start = subparsers.add_parser("start", help="start the emulator")
     start.add_argument(
         "--port", type=int, help="the port to run the server on", default=DEFAULT_PORT
@@ -39,7 +42,15 @@ def prepare_args_parser():
     )
     start.add_argument("-q", "--quiet", action="store_true", default=False, help="only outputs critical level logging")
     start.add_argument("-M", "--no-store-on-disk", action="store_true", default=False, help="use in-memory storage")
+
     subparsers.add_parser("wipe", help="Wipe the local data")
+
+    create_bucket = subparsers.add_parser("create_bucket", help="create bucket")
+    create_bucket.add_argument(
+        "-n", "--name",
+        help="Name of the new bucket"
+    )
+
     return parser, subparsers
 
 
@@ -49,6 +60,7 @@ def main():
     if args.subcommand not in subparsers.choices.keys():
         parser.print_usage()
         sys.exit(1)
+
     if args.subcommand == "wipe":
         answer = input("This operation will IRREVERSIBLY DELETE all your data. Do you wish to proceed? [y/N] ").lower()
         if answer in ("y", "ye", "yes"):
@@ -56,6 +68,12 @@ def main():
         else:
             print("wipe command cancelled")
             sys.exit(1)
+
+    if args.subcommand == "create_bucket":
+        storage = Storage()
+        create_bucket(args.name, storage)
+        sys.exit(1)
+
     root = logging.getLogger("")
     stream_handler = logging.StreamHandler()
     root.addHandler(stream_handler)

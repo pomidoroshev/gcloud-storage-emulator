@@ -40,14 +40,15 @@ HANDLERS = (
         r"^{}/b/(?P<bucket_name>[-.\w]+)/o$".format(settings.API_ENDPOINT),
         {GET: objects.ls}
     ),
+
     (
-        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>[-%.\w]+)$".format(settings.API_ENDPOINT),
-        {GET: objects.get, DELETE: objects.delete}
+        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>.*[^/]+)/copyTo/b/".format(settings.API_ENDPOINT)
+        + r"(?P<dest_bucket_name>[-.\w]+)/o/(?P<dest_object_id>.*[^/]+)$",
+        {POST: objects.copy}
     ),
     (
-        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>[-%.\w]+)/copyTo/b/".format(settings.API_ENDPOINT)
-        + r"(?P<dest_bucket_name>[-.\w]+)/o/(?P<dest_object_id>[-%.\w]+)$",
-        {POST: objects.copy}
+        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>.*[^/]+)$".format(settings.API_ENDPOINT),
+        {GET: objects.get, DELETE: objects.delete}
     ),
 
     # Non-default API endpoints
@@ -56,7 +57,7 @@ HANDLERS = (
         {POST: objects.insert, PUT: objects.upload_partial}
     ),
     (
-        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>(?:[-%.\w]+/)*[-%.\w]+)$".format(
+        r"^{}/b/(?P<bucket_name>[-.\w]+)/o/(?P<object_id>.*[^/]+)$".format(
             settings.DOWNLOAD_API_ENDPOINT
         ),
         {GET: objects.download},
@@ -67,7 +68,7 @@ HANDLERS = (
     (r"^/wipe$", {GET: _wipe_data}),  # Wipe all data
 
     # Public file serving, same as object.download
-    (r"^/(?P<bucket_name>[-.\w]+)/(?P<object_id>(?:[-%.\w]+/)*[-%.\w]+)$", {GET: objects.download}),
+    (r"^/(?P<bucket_name>[-.\w]+)/(?P<object_id>.*[^/]+)$", {GET: objects.download}),
 )
 
 
