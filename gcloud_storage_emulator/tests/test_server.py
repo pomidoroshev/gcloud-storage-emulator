@@ -439,7 +439,6 @@ class HttpEndpointsTest(ServerBaseCase):
 
     def test_wipe_keep_buckets(self):
         """ Objects should wipe the data but keep the root buckets"""
-        storage_path = STORAGE_BASE + STORAGE_DIR
         blob_path = "something.txt"
         bucket_name = "anewone"
         content = "Here is some content"
@@ -455,4 +454,3 @@ class HttpEndpointsTest(ServerBaseCase):
         self.assertEqual(fetched_bucket.name, bucket.name)
         with self.assertRaises(NotFound):
             fetched_bucket.blob(blob_path).download_as_text()
-
