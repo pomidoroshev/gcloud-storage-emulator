@@ -310,7 +310,8 @@ class Storage(object):
         except ResourceNotFound:
             logger.info("No folder to remove '{}'".format(path))
 
-    def wipe(self):
+    def wipe(self, keep_buckets=False):
+        existing_buckets = self.buckets
         self.buckets = {}
         self.objects = {}
         self.resumable = {}
@@ -321,3 +322,7 @@ class Storage(object):
                 self._fs.removetree(path)
         except ResourceNotFound as e:
             logger.warning(e)
+
+        if keep_buckets:
+            for k, v in existing_buckets.items():
+                self.create_bucket(k, v)
