@@ -21,8 +21,11 @@ DELETE = "DELETE"
 
 
 def _wipe_data(req, res, storage):
+    keep_buckets = bool(req.query.get('keep-buckets'))
     logger.debug("Wiping storage")
-    storage.wipe()
+    if keep_buckets:
+        logger.debug("...while keeping the buckets")
+    storage.wipe(keep_buckets)
     logger.debug("Storage wiped")
     res.write("OK")
 
@@ -298,8 +301,8 @@ class Server(object):
     def stop(self):
         self._api.join(timeout=1)
 
-    def wipe(self):
-        self._storage.wipe()
+    def wipe(self, keep_buckets=False):
+        self._storage.wipe(keep_buckets=keep_buckets)
 
     def run(self):
         try:
