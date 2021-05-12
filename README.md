@@ -54,6 +54,8 @@ You can wipe the data by running
 $ gcloud-storage-emulator wipe
 ```
 
+You can pass `--keep-buckets` to wipe the data while keeping the buckets.
+
 ## Python APIs
 
 To start a server from your code you can do
