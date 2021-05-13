@@ -18,10 +18,10 @@ def run_server(host, port, memory=False, default_bucket=None):
     return server.run()
 
 
-def wipe():
+def wipe(keep_buckets=False):
     print("Wiping...")
     server = create_server(None, None, False)
-    server.wipe()
+    server.wipe(keep_buckets=keep_buckets)
     print("Done.")
     return 0
 
@@ -43,7 +43,8 @@ def prepare_args_parser():
     start.add_argument("-q", "--quiet", action="store_true", default=False, help="only outputs critical level logging")
     start.add_argument("-M", "--no-store-on-disk", action="store_true", default=False, help="use in-memory storage")
 
-    subparsers.add_parser("wipe", help="Wipe the local data")
+    wipe = subparsers.add_parser("wipe", help="Wipe the local data")
+    wipe.add_argument("--keep-buckets", help="If provided the data will be wiped but the existing buckets are kept")
 
     create_bucket = subparsers.add_parser("create_bucket", help="create bucket")
     create_bucket.add_argument(
@@ -64,7 +65,7 @@ def main():
     if args.subcommand == "wipe":
         answer = input("This operation will IRREVERSIBLY DELETE all your data. Do you wish to proceed? [y/N] ").lower()
         if answer in ("y", "ye", "yes"):
-            sys.exit(wipe())
+            sys.exit(wipe(keep_buckets=args.keep_buckets))
         else:
             print("wipe command cancelled")
             sys.exit(1)
