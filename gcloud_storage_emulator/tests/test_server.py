@@ -425,7 +425,7 @@ class HttpEndpointsTest(ServerBaseCase):
         self.assertEqual(response.content, content.encode('utf-8'))
 
     def test_wipe(self):
-        """ Objects should wipe the data """
+        """ It should wipe the data """
         storage_path = STORAGE_BASE + STORAGE_DIR
         content = "Here is some content"
         bucket = self._client.create_bucket("anotherbucket1")
@@ -438,7 +438,7 @@ class HttpEndpointsTest(ServerBaseCase):
         self.assertTrue(len(os.listdir(storage_path)) == 0)
 
     def test_wipe_keep_buckets(self):
-        """ Objects should wipe the data but keep the root buckets"""
+        """It should wipe the data but keep the root buckets"""
         blob_path = "something.txt"
         bucket_name = "anewone"
         content = "Here is some content"
