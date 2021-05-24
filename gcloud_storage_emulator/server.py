@@ -84,8 +84,8 @@ def _read_data(request_handler):
     content_type = request_handler.headers["Content-Type"]
 
     if content_type.startswith("application/json"):
-        # TODO: handle encodings other than utf-8
-        return json.loads(raw_data, encoding="utf-8")
+        # RFC8259 mandates utf-8
+        return json.loads(raw_data)
 
     if content_type.startswith("multipart/"):
         parser = BytesParser()
@@ -97,7 +97,7 @@ def _read_data(request_handler):
         # For multipart upload, google API expect the first item to be a json-encoded
         # object, and the second (and only other) part, the file content
         return {
-            "meta": json.loads(payload[0].get_payload(), encoding="utf-8"),
+            "meta": json.loads(payload[0].get_payload()),
             "content": payload[1].get_payload(decode=True),
             "content-type": payload[1].get_content_type(),
         }
