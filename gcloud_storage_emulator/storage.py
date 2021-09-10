@@ -1,7 +1,7 @@
 import datetime
 import json
 import logging
-
+import os
 import fs
 from fs.errors import FileExpected, ResourceNotFound
 
@@ -12,9 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class Storage(object):
-    def __init__(self, use_memory_fs=False):
+    def __init__(self, use_memory_fs=False, data_dir=STORAGE_BASE):
+        if not os.path.isabs(data_dir):
+            raise ValueError("data_dir must be an absolute path")
+
         self._use_memory_fs = use_memory_fs
-        self._pwd = fs.open_fs(self.get_storage_base())
+        self._data_dir = data_dir
+        self._pwd = fs.open_fs(data_dir)
         try:
             self._fs = self._pwd.makedir(STORAGE_DIR)
         except fs.errors.DirectoryExists:
@@ -66,7 +70,7 @@ class Storage(object):
         if self._use_memory_fs:
             return "mem://"
         else:
-            return STORAGE_BASE
+            return self._data_dir
 
     def get_bucket(self, bucket_name):
         """Get the bucket resourec object given the bucket name
