@@ -42,6 +42,7 @@ def prepare_args_parser():
     )
     start.add_argument("-q", "--quiet", action="store_true", default=False, help="only outputs critical level logging")
     start.add_argument("-M", "--no-store-on-disk", action="store_true", default=False, help="use in-memory storage")
+    start.add_argument("-D", "--data-dir", help="directory to use as the storage root")
 
     wipe = subparsers.add_parser("wipe", help="Wipe the local data")
     wipe.add_argument("--keep-buckets", help="If provided the data will be wiped but the existing buckets are kept")
