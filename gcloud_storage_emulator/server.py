@@ -15,6 +15,7 @@ from gcloud_storage_emulator.storage import Storage
 logger = logging.getLogger(__name__)
 
 GET = "GET"
+OPTIONS = "OPTIONS"
 POST = "POST"
 PUT = "PUT"
 DELETE = "DELETE"
@@ -243,6 +244,9 @@ class RequestHandler(server.BaseHTTPRequestHandler):
         self.storage = storage
         super().__init__(*args, **kwargs)
 
+    def do_OPTIONS(self):
+        self.sendResponse(200, "ok")
+
     def do_GET(self):
         router = Router(self)
         router.handle(GET)
@@ -262,6 +266,23 @@ class RequestHandler(server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         logger.info(format % args)
 
+    def sendResponse(self, code, body=None, type="text/plain"):
+        if code >= 400:
+            if body != None:
+                self.send_error(code, body)
+            else:
+                self.send_error(code)
+        else:
+            self.send_response(code)
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Access-Control-Allow-Origin", "http://localhost:3010")
+            self.send_header("Access-Control-Allow-Methods", "POST, GET, PUT, OPTION, DELETE")
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Access-Control-Allow-Headers", "x-csrftoken,X-Custom-Header")
+            if body != None:
+                self.send_header("Content-Type", type)
+                self.end_headers()
+                self.wfile.write(body.encode())
 
 class APIThread(threading.Thread):
     def __init__(self, host, port, storage, *args, **kwargs):

@@ -77,6 +77,8 @@ def _create_resumable_upload(request, response, storage):
         'upload_id': id,
     })
     response["Location"] = request.full_url + "&{}".format(encoded_id)
+    response["Access-Control-Allow-Origin"] = "http://localhost:3010"
+    response["Access-Control-Allow-Credentials"] = "true"
 
 
 def insert(request, response, storage, *args, **kwargs):
@@ -89,7 +91,9 @@ def insert(request, response, storage, *args, **kwargs):
     uploadType = uploadType[0]
 
     if uploadType == "resumable":
-        return _create_resumable_upload(request, response, storage)
+        if isinstance(request.data, dict):
+            return _create_resumable_upload(request, response, storage)
+        return upload_partial(request, response, storage, *args, **kwargs)
 
     if uploadType == "multipart":
         return _multipart_upload(request, response, storage)
@@ -98,6 +102,8 @@ def insert(request, response, storage, *args, **kwargs):
 def upload_partial(request, response, storage, *args, **kwargs):
     upload_id = request.query.get("upload_id")[0]
     obj = storage.create_file_for_resumable_upload(upload_id, request.data)
+    response["Access-Control-Allow-Origin"] = "http://localhost:3010"
+    response["Access-Control-Allow-Credentials"] = "true"
     return response.json(obj)
 
 
